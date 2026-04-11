@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progetto Web Dinamico</title>
+    <title>Now, dreams</title>
     
     <style>
         * {
@@ -13,10 +13,12 @@
         }
 
         body {
-            background-color: #ffffff; /* Sfondo bianco */
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #000000; /* Testo nero */
+            background-color: #ffffff;
+            /* Font SF Pro Regular tramite system fonts */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            color: #000000;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
         .container {
@@ -25,7 +27,7 @@
             width: 100vw;
         }
 
-        /* Metà sinistra per le immagini */
+        /* Metà sinistra: Immagini */
         .left-half {
             flex: 1;
             position: relative;
@@ -40,43 +42,38 @@
             height: 100%;
             object-fit: cover;
             opacity: 0;
-            transition: opacity 1.5s ease-in-out;
+            /* Transizione rapida per seguire il ritmo di 0.9s */
+            transition: opacity 0.2s ease-in-out; 
         }
 
         .slideshow-img.active {
             opacity: 1;
         }
 
-        /* Metà destra per il testo */
+        /* Metà destra: Testo */
         .right-half {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 50px;
+            padding: 60px;
         }
 
         .text-content {
-            font-size: 2rem;
+            font-size: 2.2rem;
             line-height: 1.4;
-            max-width: 85%;
-            word-wrap: break-word;
+            max-width: 90%;
+            font-weight: 400; /* Regular */
+            letter-spacing: -0.02em;
+            text-align: left;
         }
 
-        /* Design per smartphone */
+        /* Mobile */
         @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-            .left-half, .right-half {
-                height: 50vh;
-            }
-            .right-half {
-                padding: 20px;
-            }
-            .text-content {
-                font-size: 1.2rem;
-            }
+            .container { flex-direction: column; }
+            .left-half, .right-half { height: 50vh; }
+            .right-half { padding: 30px; }
+            .text-content { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -84,63 +81,66 @@
 
     <div class="container">
         <div class="left-half" id="image-container">
-            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop" class="slideshow-img active" alt="Immagine 1">
-            <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop" class="slideshow-img" alt="Immagine 2">
-            <img src="https://images.unsplash.com/photo-1506744626753-dba7e41d7b69?q=80&w=800&auto=format&fit=crop" class="slideshow-img" alt="Immagine 3">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800" class="slideshow-img active">
+            <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800" class="slideshow-img">
+            <img src="https://images.unsplash.com/photo-1506744626753-dba7e41d7b69?q=80&w=800" class="slideshow-img">
+            <img src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?q=80&w=800" class="slideshow-img">
         </div>
 
         <div class="right-half">
             <div class="text-content" id="scramble-text">
-                Questo è il tuo testo iniziale. Le lettere di ogni singola parola continueranno a scambiarsi di posto creando un effetto visivo caotico ma affascinante.
+                Il progetto esplora l'instabilità della forma attraverso il linguaggio. Le parole mutano ma mantengono la loro essenza visiva, alternando ordine e caos in un loop continuo.
             </div>
         </div>
     </div>
     
     <script>
-        // --- 1. Gestione Slideshow Immagini ---
+        // --- SLIDESHOW VELOCE (0.9 secondi) ---
         const images = document.querySelectorAll('.slideshow-img');
-        let currentImageIndex = 0;
+        let currentImg = 0;
 
-        function changeImage() {
-            images[currentImageIndex].classList.remove('active');
-            currentImageIndex = (currentImageIndex + 1) % images.length;
-            images[currentImageIndex].classList.add('active');
+        function rotateImages() {
+            images[currentImg].classList.remove('active');
+            currentImg = (currentImg + 1) % images.length;
+            images[currentImg].classList.add('active');
         }
-
-        // Cambia immagine ogni 3000 ms (3 secondi)
-        setInterval(changeImage, 3000);
+        setInterval(rotateImages, 900); // Cambio ogni 0.9s
 
 
-        // --- 2. Gestione Effetto Testo ---
+        // --- TESTO DINAMICO ---
         const textElement = document.getElementById('scramble-text');
         const originalText = textElement.innerText;
-        
-        // Separa le parole dalla punteggiatura per non mescolare gli spazi
         const tokens = originalText.match(/(\w+)|(\W+)/g);
 
-        // Funzione per mescolare i caratteri
-        function shuffleString(str) {
-            let arr = str.split('');
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
+        function shuffle(str) {
+            let a = str.split("");
+            for(let i = a.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
             }
-            return arr.join('');
+            return a.join("");
         }
 
-        function scrambleText() {
-            const scrambledTokens = tokens.map(token => {
-                // Mescola solo se è una parola (più lunga di 1 lettera)
-                if (/\w+/.test(token) && token.length > 1) {
-                    return shuffleString(token);
-                }
-                return token;
-            });
-            textElement.innerText = scrambledTokens.join('');
+        function animateText() {
+            // Probabilità: 80% testo corretto, 20% rimescolato
+            const showCorrect = Math.random() > 0.2;
+
+            if (showCorrect) {
+                textElement.innerText = originalText;
+            } else {
+                const scrambled = tokens.map(t => {
+                    if (/\w+/.test(t) && t.length > 3) {
+                        return shuffle(t);
+                    }
+                    return t;
+                }).join("");
+                textElement.innerText = scrambled;
+            }
         }
 
-        // Mescola le lettere ogni 200 ms
-        setInterval(scrambleText, 200);
+        // Velocità del testo: aggiorna ogni 1.2 secondi per non essere troppo frenetico
+        // ma mantenere la "giusta posizione" ben visibile.
+        setInterval(animateText, 1200);
     </script>
 
 </body>
