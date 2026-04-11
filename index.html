@@ -14,10 +14,10 @@
 
         body {
             background-color: #ffffff;
-            /* Font SF Pro Regular tramite system fonts */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            /* Font di sistema Apple (SF Pro) con fallback standard */
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Regular", "Helvetica Neue", Arial, sans-serif;
             color: #000000;
-            overflow-x: hidden;
+            overflow: hidden; /* Evita lo scrolling se non necessario */
             -webkit-font-smoothing: antialiased;
         }
 
@@ -27,11 +27,12 @@
             width: 100vw;
         }
 
-        /* Metà sinistra: Immagini */
+        /* Metà sinistra: Le tue immagini */
         .left-half {
             flex: 1;
             position: relative;
             overflow: hidden;
+            background-color: #ffffff;
         }
 
         .slideshow-img {
@@ -40,10 +41,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            /* 'cover' mantiene le proporzioni delle tue foto senza distorcerle */
+            object-fit: cover; 
             opacity: 0;
-            /* Transizione rapida per seguire il ritmo di 0.9s */
-            transition: opacity 0.2s ease-in-out; 
+            transition: opacity 0.15s ease-in-out; /* Transizione netta e veloce */
         }
 
         .slideshow-img.active {
@@ -57,18 +58,21 @@
             align-items: center;
             justify-content: center;
             padding: 60px;
+            background-color: #ffffff;
         }
 
         .text-content {
             font-size: 2.2rem;
             line-height: 1.4;
             max-width: 90%;
-            font-weight: 400; /* Regular */
+            font-weight: 400; 
             letter-spacing: -0.02em;
             text-align: left;
+            /* Forza il mantenimento degli spazi per evitare salti di layout */
+            white-space: pre-wrap; 
         }
 
-        /* Mobile */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
             .container { flex-direction: column; }
             .left-half, .right-half { height: 50vh; }
@@ -81,35 +85,39 @@
 
     <div class="container">
         <div class="left-half" id="image-container">
-            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800" class="slideshow-img active">
-            <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800" class="slideshow-img">
-            <img src="https://images.unsplash.com/photo-1506744626753-dba7e41d7b69?q=80&w=800" class="slideshow-img">
-            <img src="https://images.unsplash.com/photo-1633167606207-d840b5070fc2?q=80&w=800" class="slideshow-img">
-        </div>
+            <img src="img/foto1.jpg" class="slideshow-img active">
+            <img src="img/foto2.jpg" class="slideshow-img">
+            <img src="img/foto3.jpg" class="slideshow-img">
+            <img src="img/foto4.jpg" class="slideshow-img">
+            </div>
 
         <div class="right-half">
             <div class="text-content" id="scramble-text">
-                Il progetto esplora l'instabilità della forma attraverso il linguaggio. Le parole mutano ma mantengono la loro essenza visiva, alternando ordine e caos in un loop continuo.
+                Il tuo testo va qui. Le lettere cambiano posizione velocemente ma la parola corretta resta la protagonista della scena, creando un equilibrio tra ordine e caos.
             </div>
         </div>
     </div>
     
     <script>
-        // --- SLIDESHOW VELOCE (0.9 secondi) ---
+        // --- LOGICA SLIDESHOW (0.9 secondi) ---
         const images = document.querySelectorAll('.slideshow-img');
         let currentImg = 0;
 
         function rotateImages() {
+            if (images.length === 0) return;
             images[currentImg].classList.remove('active');
             currentImg = (currentImg + 1) % images.length;
             images[currentImg].classList.add('active');
         }
-        setInterval(rotateImages, 900); // Cambio ogni 0.9s
+        
+        // Cambio immagine ogni 900 millisecondi (0.9s)
+        setInterval(rotateImages, 900);
 
 
-        // --- TESTO DINAMICO ---
+        // --- LOGICA TESTO (Glitch controllato) ---
         const textElement = document.getElementById('scramble-text');
         const originalText = textElement.innerText;
+        // Divide il testo preservando parole e punteggiatura
         const tokens = originalText.match(/(\w+)|(\W+)/g);
 
         function shuffle(str) {
@@ -122,13 +130,14 @@
         }
 
         function animateText() {
-            // Probabilità: 80% testo corretto, 20% rimescolato
-            const showCorrect = Math.random() > 0.2;
+            // 85% di probabilità che il testo sia corretto
+            const isCorrect = Math.random() > 0.15;
 
-            if (showCorrect) {
+            if (isCorrect) {
                 textElement.innerText = originalText;
             } else {
                 const scrambled = tokens.map(t => {
+                    // Mescola solo parole con più di 3 lettere per mantenere leggibilità
                     if (/\w+/.test(t) && t.length > 3) {
                         return shuffle(t);
                     }
@@ -138,9 +147,8 @@
             }
         }
 
-        // Velocità del testo: aggiorna ogni 1.2 secondi per non essere troppo frenetico
-        // ma mantenere la "giusta posizione" ben visibile.
-        setInterval(animateText, 1200);
+        // Frequenza di aggiornamento del glitch (molto veloce per l'effetto visivo)
+        setInterval(animateText, 150);
     </script>
 
 </body>
