@@ -26,7 +26,7 @@
       min-height: 100vh;
     }
 
-    /* 🔥 SINISTRA = TESTO */
+    /* 🔥 SINISTRA = IMMAGINE */
     .left {
       width: 50%;
       display: flex;
@@ -35,7 +35,15 @@
       padding: 40px;
     }
 
-    /* 🔥 DESTRA = IMMAGINE */
+    .left img {
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* 🔥 DESTRA = TESTO */
     .right {
       width: 50%;
       display: flex;
@@ -44,22 +52,14 @@
       padding: 40px;
     }
 
-    /* IMAGE */
-    .right img {
-      width: 100%;
-      max-width: 420px;
-      aspect-ratio: 4 / 5;
-      object-fit: cover;
-      display: block;
-    }
-
-    /* TEXT */
     .text {
       width: 80%;
-      text-align: justify;
       font-size: 24px;
       line-height: 1.5;
       font-weight: 400;
+
+      text-align: justify;
+      text-align-last: left; /* 👈 ultimo rigo a sinistra */
     }
 
     .char {
@@ -78,7 +78,7 @@
         padding: 20px;
       }
 
-      .right img {
+      .left img {
         max-width: 90%;
       }
 
@@ -93,14 +93,14 @@
 
 <div class="container">
 
-  <!-- SINISTRA: TESTO -->
+  <!-- IMMAGINE SINISTRA -->
   <div class="left">
-    <div id="text" class="text"></div>
+    <img src="images/image1.webp" alt="immagine progetto" />
   </div>
 
-  <!-- DESTRA: IMMAGINE -->
+  <!-- TESTO DESTRA -->
   <div class="right">
-    <img src="images/image1.webp" alt="immagine progetto" />
+    <div id="text" class="text"></div>
   </div>
 
 </div>
@@ -142,13 +142,13 @@ function buildText(text) {
   });
 }
 
-/* ---------------- MORPH ---------------- */
+/* ---------------- MORPH (PIÙ LENTO) ---------------- */
 function morphTo(newText) {
   const chars = Array.from(document.querySelectorAll(".char"));
   const newChars = [...newText];
 
   let frame = 0;
-  const steps = 22;
+  const steps = 40; // 👈 più lento (prima ~22)
 
   const interval = setInterval(() => {
 
@@ -185,7 +185,12 @@ function changeText() {
 
 /* ---------------- START ---------------- */
 init();
-setInterval(changeText, 15000);
+
+/* 🔥 morph parte dopo 6 secondi */
+setTimeout(() => {
+  changeText();
+  setInterval(changeText, 15000);
+}, 6000);
 
 </script>
 
