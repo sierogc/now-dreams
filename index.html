@@ -51,10 +51,14 @@
       font-size: 24px;
       line-height: 1.5;
       font-weight: 400;
-      white-space: pre-wrap;
     }
 
     .word {
+      display: inline-block;
+      white-space: pre;
+    }
+
+    .char {
       display: inline-block;
     }
 
@@ -98,22 +102,22 @@
 
 <script>
 /* -----------------------------
-   TESTI (EDITABILI)
+   TEXTS
 ------------------------------*/
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
   "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
   "Ogni immagine è un errore che insiste nel diventare memoria.",
-  "La realtà non si interrompe, cambia solo frequenza di lettura.",
-  "Non esiste un inizio, solo una sequenza che decide di ripetersi.",
-  "Il sistema genera significato solo quando inizia a corrodersi."
+  "La realtà non si interrompe ma cambia frequenza di lettura.",
+  "Non esiste un inizio solo una sequenza che decide di ripetersi.",
+  "Il sistema genera significato quando inizia a corrodersi."
 ];
 
 let currentIndex = -1;
 let previousIndex = -1;
 
 /* -----------------------------
-   UTILS RANDOM
+   INIT RANDOM
 ------------------------------*/
 function getNextIndex() {
   let i;
@@ -124,92 +128,69 @@ function getNextIndex() {
 }
 
 /* -----------------------------
-   SCRAMBLE CHARACTERS
+   BUILD TEXT STRUCTURE
 ------------------------------*/
-const chars = "!<>-_\\/[]{}—=+*^?#";
-
-function randomChar() {
-  return chars[Math.floor(Math.random() * chars.length)];
-}
-
-/* -----------------------------
-   MORPH WORD FUNCTION
-------------------------------*/
-function morphWord(from, to, progress) {
-  const maxLen = Math.max(from.length, to.length);
-  let result = "";
-
-  for (let i = 0; i < maxLen; i++) {
-    const fromChar = from[i] || "";
-    const toChar = to[i] || "";
-
-    if (i < progress) {
-      result += toChar;
-    } else {
-      result += randomChar();
-    }
-  }
-
-  return result;
-}
-
-/* -----------------------------
-   RENDER INITIAL TEXT
-------------------------------*/
-function renderText(text) {
-  const el = document.getElementById("text");
-  el.innerHTML = "";
+function buildText(text) {
+  const container = document.getElementById("text");
+  container.innerHTML = "";
 
   const words = text.split(" ");
 
-  words.forEach(w => {
-    const span = document.createElement("span");
-    span.className = "word";
-    span.textContent = w + " ";
-    el.appendChild(span);
+  words.forEach(word => {
+    const wordSpan = document.createElement("span");
+    wordSpan.className = "word";
+
+    [...word].forEach(letter => {
+      const charSpan = document.createElement("span");
+      charSpan.className = "char";
+      charSpan.textContent = letter;
+      wordSpan.appendChild(charSpan);
+    });
+
+    container.appendChild(wordSpan);
+    container.appendChild(document.createTextNode(" "));
   });
 }
 
 /* -----------------------------
-   MORPH ENGINE (POSITION SAFE)
+   FLUID MORPH (NO SYMBOLS)
 ------------------------------*/
 function morphTo(newText) {
   const container = document.getElementById("text");
 
-  const oldWords = Array.from(container.children).map(w =>
-    w.textContent.trim()
-  );
-
+  const oldChars = Array.from(container.querySelectorAll(".char"));
   const newWords = newText.split(" ");
 
-  const maxLen = Math.max(oldWords.length, newWords.length);
+  const newCharsFlat = newWords.join(" ").split("");
+
+  const maxLen = Math.max(oldChars.length, newCharsFlat.length);
 
   let frame = 0;
-  const steps = 25;
+  const steps = 22; // via di mezzo A/B
 
   const interval = setInterval(() => {
-    container.innerHTML = "";
-
     for (let i = 0; i < maxLen; i++) {
-      const from = oldWords[i] || "";
-      const to = newWords[i] || "";
 
-      const progress = Math.floor((frame / steps) * to.length);
+      const oldChar = oldChars[i];
+      const newChar = newCharsFlat[i] || " ";
 
-      const span = document.createElement("span");
-      span.className = "word";
+      const progress = frame / steps;
 
-      span.textContent = morphWord(from, to, progress) + " ";
+      if (!oldChar) continue;
 
-      container.appendChild(span);
+      // probabilità di switch graduale
+      if (Math.random() < progress) {
+        oldChar.textContent = newChar;
+      }
     }
 
     frame++;
 
     if (frame > steps) {
       clearInterval(interval);
-      renderText(newText);
+      buildText(newText);
     }
+
   }, 60);
 }
 
@@ -218,7 +199,7 @@ function morphTo(newText) {
 ------------------------------*/
 function init() {
   currentIndex = getNextIndex();
-  renderText(texts[currentIndex]);
+  buildText(texts[currentIndex]);
 }
 
 /* -----------------------------
@@ -232,7 +213,7 @@ function changeText() {
 }
 
 /* -----------------------------
-   START SYSTEM
+   START
 ------------------------------*/
 init();
 setInterval(changeText, 15000);
