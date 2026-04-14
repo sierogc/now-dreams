@@ -1,155 +1,122 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Now, dreams</title>
-    
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Split Responsive Project</title>
 
-        body {
-            background-color: #ffffff;
-            /* Font di sistema Apple (SF Pro) con fallback standard */
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Regular", "Helvetica Neue", Arial, sans-serif;
-            color: #000000;
-            overflow: hidden; /* Evita lo scrolling se non necessario */
-            -webkit-font-smoothing: antialiased;
-        }
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        .container {
-            display: flex;
-            min-height: 100vh;
-            width: 100vw;
-        }
+    body {
+      background: white;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      color: black;
+    }
 
-        /* Metà sinistra: Le tue immagini */
-        .left-half {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-            background-color: #ffffff;
-        }
+    /* SPLIT DESKTOP */
+    .container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
 
-        .slideshow-img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* 'cover' mantiene le proporzioni delle tue foto senza distorcerle */
-            object-fit: cover; 
-            opacity: 0;
-            transition: opacity 0.15s ease-in-out; /* Transizione netta e veloce */
-        }
+    .left,
+    .right {
+      width: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
 
-        .slideshow-img.active {
-            opacity: 1;
-        }
+    /* IMMAGINE */
+    .left img {
+      max-width: 85%;
+      max-height: 85%;
+      object-fit: contain;
+      display: block;
+    }
 
-        /* Metà destra: Testo */
-        .right-half {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 60px;
-            background-color: #ffffff;
-        }
+    /* TESTO */
+    .text {
+      width: 80%;
+    }
 
-        .text-content {
-            font-size: 2.2rem;
-            line-height: 1.4;
-            max-width: 90%;
-            font-weight: 400; 
-            letter-spacing: -0.02em;
-            text-align: left;
-            /* Forza il mantenimento degli spazi per evitare salti di layout */
-            white-space: pre-wrap; 
-        }
+    h1 {
+      font-weight: 400;
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
 
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .left-half, .right-half { height: 50vh; }
-            .right-half { padding: 30px; }
-            .text-content { font-size: 1.5rem; }
-        }
-    </style>
+    p {
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    /* 📱 RESPONSIVE */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .left,
+      .right {
+        width: 100%;
+        height: 50vh;
+        padding: 20px;
+      }
+
+      .left img {
+        max-width: 90%;
+        max-height: 90%;
+      }
+
+      .text {
+        width: 90%;
+        text-align: center;
+      }
+    }
+
+    /* schermi molto grandi */
+    @media (min-width: 1600px) {
+      h1 {
+        font-size: 34px;
+      }
+
+      p {
+        font-size: 18px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-    <div class="container">
-        <div class="left-half" id="image-container">
-            <img src="img/foto1.jpg" class="slideshow-img active">
-            <img src="img/foto2.jpg" class="slideshow-img">
-            <img src="img/foto3.jpg" class="slideshow-img">
-            <img src="img/foto4.jpg" class="slideshow-img">
-            </div>
+  <div class="container">
 
-        <div class="right-half">
-            <div class="text-content" id="scramble-text">
-                Il tuo testo va qui. Le lettere cambiano posizione velocemente ma la parola corretta resta la protagonista della scena, creando un equilibrio tra ordine e caos.
-            </div>
-        </div>
+    <!-- LEFT -->
+    <div class="left">
+      <img src="images/image1.jpg" alt="immagine progetto" />
     </div>
-    
-    <script>
-        // --- LOGICA SLIDESHOW (0.9 secondi) ---
-        const images = document.querySelectorAll('.slideshow-img');
-        let currentImg = 0;
 
-        function rotateImages() {
-            if (images.length === 0) return;
-            images[currentImg].classList.remove('active');
-            currentImg = (currentImg + 1) % images.length;
-            images[currentImg].classList.add('active');
-        }
-        
-        // Cambio immagine ogni 900 millisecondi (0.9s)
-        setInterval(rotateImages, 900);
+    <!-- RIGHT -->
+    <div class="right">
+      <div class="text">
+        <h1>Titolo progetto</h1>
+        <p>
+          Testo del progetto. Layout split screen perfettamente bilanciato su desktop,
+          e adattivo su mobile con stacking verticale.
+        </p>
+      </div>
+    </div>
 
-
-        // --- LOGICA TESTO (Glitch controllato) ---
-        const textElement = document.getElementById('scramble-text');
-        const originalText = textElement.innerText;
-        // Divide il testo preservando parole e punteggiatura
-        const tokens = originalText.match(/(\w+)|(\W+)/g);
-
-        function shuffle(str) {
-            let a = str.split("");
-            for(let i = a.length - 1; i > 0; i--) {
-                let j = Math.floor(Math.random() * (i + 1));
-                [a[i], a[j]] = [a[j], a[i]];
-            }
-            return a.join("");
-        }
-
-        function animateText() {
-            // 85% di probabilità che il testo sia corretto
-            const isCorrect = Math.random() > 0.15;
-
-            if (isCorrect) {
-                textElement.innerText = originalText;
-            } else {
-                const scrambled = tokens.map(t => {
-                    // Mescola solo parole con più di 3 lettere per mantenere leggibilità
-                    if (/\w+/.test(t) && t.length > 3) {
-                        return shuffle(t);
-                    }
-                    return t;
-                }).join("");
-                textElement.innerText = scrambled;
-            }
-        }
-
-        // Frequenza di aggiornamento del glitch (molto veloce per l'effetto visivo)
-        setInterval(animateText, 150);
-    </script>
+  </div>
 
 </body>
 </html>
