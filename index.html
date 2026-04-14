@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Frame-Based Morph System</title>
+  <title>Continuous Morph System</title>
 
   <link rel="preload" as="image" href="images/image1.webp">
 
@@ -26,7 +26,7 @@
       min-height: 100vh;
     }
 
-    /* IMMAGINE SINISTRA */
+    /* IMAGE LEFT */
     .left {
       width: 50%;
       display: flex;
@@ -40,10 +40,9 @@
       max-width: 420px;
       aspect-ratio: 4 / 5;
       object-fit: cover;
-      display: block;
     }
 
-    /* TESTO DESTRA */
+    /* TEXT RIGHT */
     .right {
       width: 50%;
       display: flex;
@@ -56,9 +55,7 @@
       width: 80%;
       font-size: 24px;
       line-height: 1.5;
-      font-weight: 400;
 
-      /* ✔ FIX JUSTIFIED CORRETTO */
       text-align: justify;
       text-align-last: left;
     }
@@ -94,12 +91,10 @@
 
 <div class="container">
 
-  <!-- LEFT IMAGE -->
   <div class="left">
-    <img src="images/image1.webp" alt="immagine progetto" />
+    <img src="images/image1.webp" />
   </div>
 
-  <!-- RIGHT TEXT -->
   <div class="right">
     <div id="text" class="text"></div>
   </div>
@@ -118,53 +113,69 @@ const texts = [
   "Il sistema genera significato quando inizia a corrodersi."
 ];
 
-let currentIndex = -1;
-let previousIndex = -1;
-
 /* ---------------- STATE ---------------- */
+let current = -1;
+let previous = -1;
+
 let phase = "wait";
 let waitStart = performance.now();
 
 let morphStart = 0;
 
 const WAIT_TIME = 6000;
+const MORPH_TIME = 6500; // 🔥 più lento
 
-/* ✔ MORPH PIÙ LENTO */
-const MORPH_TIME = 4500;
+let fromText = [];
+let toText = [];
 
-let oldText = "";
-let newText = "";
-
-/* ---------------- RANDOM ---------------- */
+/* ---------------- SAFE PICK ---------------- */
 function getNextIndex() {
   let i;
   do {
     i = Math.floor(Math.random() * texts.length);
-  } while (i === currentIndex || i === previousIndex);
+  } while (i === current || i === previous);
   return i;
 }
 
+/* ---------------- NORMALIZE TEXT ---------------- */
+function normalize(a, b) {
+  const max = Math.max(a.length, b.length);
+
+  const A = a.split("");
+  const B = b.split("");
+
+  while (A.length < max) A.push(" ");
+  while (B.length < max) B.push(" ");
+
+  return [A, B];
+}
+
 /* ---------------- RENDER ---------------- */
-function renderText(text) {
+function render(textArr) {
   const el = document.getElementById("text");
   el.innerHTML = "";
 
-  [...text].forEach(letter => {
+  textArr.forEach(ch => {
     const span = document.createElement("span");
     span.className = "char";
-    span.textContent = letter;
+    span.textContent = ch;
     el.appendChild(span);
   });
 }
 
-/* ---------------- MORPH ---------------- */
+/* ---------------- CONTINUOUS MORPH ---------------- */
 function updateMorph(progress) {
   const chars = document.querySelectorAll(".char");
-  const target = [...newText];
 
   chars.forEach((el, i) => {
-    if (Math.random() < progress) {
-      el.textContent = target[i] || " ";
+    const from = fromText[i];
+    const to = toText[i];
+
+    if (progress >= 1) {
+      el.textContent = to;
+    } else {
+      // progress continuo senza random
+      el.textContent = (progress < (i / chars.length)) ? from : to;
     }
   });
 }
@@ -179,12 +190,18 @@ function loop(now) {
       phase = "morph";
       morphStart = now;
 
-      oldText = texts[currentIndex];
-      previousIndex = currentIndex;
-      currentIndex = getNextIndex();
-      newText = texts[currentIndex];
+      previous = current;
+      current = getNextIndex();
 
-      renderText(oldText);
+      const old = texts[previous === -1 ? current : previous];
+      const next = texts[current];
+
+      const norm = normalize(old, next);
+
+      fromText = norm[0];
+      toText = norm[1];
+
+      render(fromText);
     }
   }
 
@@ -206,9 +223,8 @@ function loop(now) {
 
 /* ---------------- INIT ---------------- */
 function init() {
-  currentIndex = getNextIndex();
-  renderText(texts[currentIndex]);
-
+  current = getNextIndex();
+  render(texts[current].split(""));
   waitStart = performance.now();
   requestAnimationFrame(loop);
 }
