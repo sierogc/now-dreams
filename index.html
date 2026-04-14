@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+<title>Generative Typographic System</title>
+
+<link rel="preload" as="image" href="images/image1.webp">
+
 <style>
 :root {
   --baseline: 12px;
@@ -22,56 +26,48 @@ body {
   color: black;
 }
 
-/* LAYOUT */
+/* GRID */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   min-height: 100vh;
 }
 
-/* COLUMN BASE */
+/* COLONNE */
 .col {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: calc(var(--baseline) * 4); /* 48px */
+  padding: calc(var(--baseline) * 4);
 }
 
-/* IMAGE */
+/* IMMAGINE */
 .image {
   width: 100%;
   max-width: 420px;
   aspect-ratio: 4 / 5;
   object-fit: cover;
-
-  /* allineamento alla griglia */
-  margin-top: calc(var(--baseline) * 0);
 }
 
-/* TEXT */
+/* TESTO */
 .text {
   width: 100%;
   max-width: 520px;
 
   font-size: 24px;
-  line-height: calc(var(--baseline) * 3); /* 36px */
+  line-height: calc(var(--baseline) * 3);
 
   text-align: justify;
   text-align-last: left;
 
-  /* 🔥 blocca rottura parole */
   word-break: keep-all;
   overflow-wrap: normal;
   hyphens: none;
 }
 
-/* WORD + CHAR */
+/* PAROLE */
 .word {
   white-space: nowrap;
-}
-
-.char {
-  display: inline-block;
 }
 
 /* MOBILE */
@@ -87,10 +83,12 @@ body {
 
 <div class="container">
 
+  <!-- IMMAGINE SINISTRA -->
   <div class="col">
-    <img src="images/image1.webp" class="image">
+    <img src="images/image1.webp" class="image" />
   </div>
 
+  <!-- TESTO DESTRA -->
   <div class="col">
     <div id="text" class="text"></div>
   </div>
@@ -99,7 +97,7 @@ body {
 
 <script>
 
-/* ---------------- TEXTS ---------------- */
+/* ---------------- TESTI ---------------- */
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
   "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
@@ -109,7 +107,7 @@ const texts = [
   "Il sistema genera significato quando inizia a corrodersi."
 ];
 
-/* ---------------- STATE ---------------- */
+/* ---------------- STATO ---------------- */
 let current = -1;
 let previous = -1;
 
@@ -118,10 +116,10 @@ let waitStart = performance.now();
 let morphStart = 0;
 
 const WAIT_TIME = 6000;
-const MORPH_TIME = 7000; // ancora più lento
+const MORPH_TIME = 7000;
 
-let fromWords = [];
-let toWords = [];
+let fromText = "";
+let toText = "";
 
 /* ---------------- RANDOM ---------------- */
 function getNextIndex() {
@@ -132,58 +130,46 @@ function getNextIndex() {
   return i;
 }
 
-/* ---------------- BUILD ---------------- */
-function build(words) {
+/* ---------------- RENDER ---------------- */
+function render(text) {
   const el = document.getElementById("text");
   el.innerHTML = "";
 
+  const words = text.split(" ");
+
   words.forEach(word => {
-    const w = document.createElement("span");
-    w.className = "word";
-
-    [...word].forEach(letter => {
-      const c = document.createElement("span");
-      c.className = "char";
-      c.textContent = letter;
-      w.appendChild(c);
-    });
-
-    el.appendChild(w);
+    const span = document.createElement("span");
+    span.className = "word";
+    span.textContent = word;
+    el.appendChild(span);
     el.appendChild(document.createTextNode(" "));
   });
 }
 
 /* ---------------- NORMALIZE ---------------- */
 function normalize(a, b) {
-  const A = a.split(" ");
-  const B = b.split(" ");
+  const max = Math.max(a.length, b.length);
 
-  const max = Math.max(A.length, B.length);
+  let A = a;
+  let B = b;
 
-  while (A.length < max) A.push("");
-  while (B.length < max) B.push("");
+  while (A.length < max) A += " ";
+  while (B.length < max) B += " ";
 
   return [A, B];
 }
 
-/* ---------------- MORPH ---------------- */
-function updateMorph(progress) {
-  const words = document.querySelectorAll(".word");
+/* ---------------- MORPH CONTINUO ---------------- */
+function morph(progress) {
+  let result = "";
 
-  words.forEach((wordEl, i) => {
-    const from = fromWords[i];
-    const to = toWords[i];
+  for (let i = 0; i < fromText.length; i++) {
+    result += (progress > (i / fromText.length))
+      ? toText[i]
+      : fromText[i];
+  }
 
-    const chars = wordEl.querySelectorAll(".char");
-
-    for (let j = 0; j < Math.max(from.length, to.length); j++) {
-      if (!chars[j]) continue;
-
-      if (progress > (j / (to.length || 1))) {
-        chars[j].textContent = to[j] || "";
-      }
-    }
-  });
+  render(result);
 }
 
 /* ---------------- LOOP ---------------- */
@@ -191,6 +177,7 @@ function loop(now) {
 
   if (phase === "wait") {
     if (now - waitStart > WAIT_TIME) {
+
       phase = "morph";
       morphStart = now;
 
@@ -202,18 +189,17 @@ function loop(now) {
         texts[current]
       );
 
-      fromWords = A;
-      toWords = B;
-
-      build(fromWords);
+      fromText = A;
+      toText = B;
     }
   }
 
   if (phase === "morph") {
+
     let progress = (now - morphStart) / MORPH_TIME;
     if (progress > 1) progress = 1;
 
-    updateMorph(progress);
+    morph(progress);
 
     if (progress === 1) {
       phase = "wait";
@@ -227,7 +213,7 @@ function loop(now) {
 /* ---------------- INIT ---------------- */
 function init() {
   current = getNextIndex();
-  build(texts[current].split(" "));
+  render(texts[current]);
   waitStart = performance.now();
   requestAnimationFrame(loop);
 }
