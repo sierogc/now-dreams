@@ -4,16 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<title>Generative Typographic System</title>
-
-<link rel="preload" as="image" href="images/image1.webp">
-
 <style>
 :root {
   --baseline: 12px;
 }
 
-/* RESET */
 * {
   margin: 0;
   padding: 0;
@@ -23,7 +18,6 @@
 body {
   background: white;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-  color: black;
 }
 
 /* GRID */
@@ -33,7 +27,6 @@ body {
   min-height: 100vh;
 }
 
-/* COLONNE */
 .col {
   display: flex;
   justify-content: center;
@@ -41,15 +34,13 @@ body {
   padding: calc(var(--baseline) * 4);
 }
 
-/* IMMAGINE */
 .image {
   width: 100%;
   max-width: 420px;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 4/5;
   object-fit: cover;
 }
 
-/* TESTO */
 .text {
   width: 100%;
   max-width: 520px;
@@ -65,9 +56,12 @@ body {
   hyphens: none;
 }
 
-/* PAROLE */
 .word {
   white-space: nowrap;
+}
+
+.char {
+  display: inline-block;
 }
 
 /* MOBILE */
@@ -83,12 +77,10 @@ body {
 
 <div class="container">
 
-  <!-- IMMAGINE SINISTRA -->
   <div class="col">
-    <img src="images/image1.webp" class="image" />
+    <img src="images/image1.webp" class="image">
   </div>
 
-  <!-- TESTO DESTRA -->
   <div class="col">
     <div id="text" class="text"></div>
   </div>
@@ -97,7 +89,7 @@ body {
 
 <script>
 
-/* ---------------- TESTI ---------------- */
+/* ---------------- TEXTS ---------------- */
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
   "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
@@ -107,7 +99,6 @@ const texts = [
   "Il sistema genera significato quando inizia a corrodersi."
 ];
 
-/* ---------------- STATO ---------------- */
 let current = -1;
 let previous = -1;
 
@@ -119,7 +110,9 @@ const WAIT_TIME = 6000;
 const MORPH_TIME = 7000;
 
 let fromText = "";
-let toText = "";
+let toText = [];
+
+let charSpans = [];
 
 /* ---------------- RANDOM ---------------- */
 function getNextIndex() {
@@ -130,18 +123,28 @@ function getNextIndex() {
   return i;
 }
 
-/* ---------------- RENDER ---------------- */
-function render(text) {
+/* ---------------- INIT DOM ---------------- */
+function buildDOM(text) {
   const el = document.getElementById("text");
   el.innerHTML = "";
 
-  const words = text.split(" ");
+  charSpans = [];
 
-  words.forEach(word => {
-    const span = document.createElement("span");
-    span.className = "word";
-    span.textContent = word;
-    el.appendChild(span);
+  text.split(" ").forEach(word => {
+
+    const wordSpan = document.createElement("span");
+    wordSpan.className = "word";
+
+    [...word].forEach(letter => {
+      const span = document.createElement("span");
+      span.className = "char";
+      span.textContent = letter;
+
+      charSpans.push(span);
+      wordSpan.appendChild(span);
+    });
+
+    el.appendChild(wordSpan);
     el.appendChild(document.createTextNode(" "));
   });
 }
@@ -150,32 +153,29 @@ function render(text) {
 function normalize(a, b) {
   const max = Math.max(a.length, b.length);
 
-  let A = a;
-  let B = b;
+  while (a.length < max) a += " ";
+  while (b.length < max) b += " ";
 
-  while (A.length < max) A += " ";
-  while (B.length < max) B += " ";
-
-  return [A, B];
+  return [a, b];
 }
 
-/* ---------------- MORPH CONTINUO ---------------- */
-function morph(progress) {
-  let result = "";
+/* ---------------- UPDATE ---------------- */
+function updateMorph(progress) {
+  for (let i = 0; i < charSpans.length; i++) {
 
-  for (let i = 0; i < fromText.length; i++) {
-    result += (progress > (i / fromText.length))
-      ? toText[i]
-      : fromText[i];
+    const from = fromText[i] || " ";
+    const to = toText[i] || " ";
+
+    charSpans[i].textContent =
+      (progress > (i / charSpans.length)) ? to : from;
   }
-
-  render(result);
 }
 
 /* ---------------- LOOP ---------------- */
 function loop(now) {
 
   if (phase === "wait") {
+
     if (now - waitStart > WAIT_TIME) {
 
       phase = "morph";
@@ -190,7 +190,7 @@ function loop(now) {
       );
 
       fromText = A;
-      toText = B;
+      toText = B.split("");
     }
   }
 
@@ -199,7 +199,7 @@ function loop(now) {
     let progress = (now - morphStart) / MORPH_TIME;
     if (progress > 1) progress = 1;
 
-    morph(progress);
+    updateMorph(progress);
 
     if (progress === 1) {
       phase = "wait";
@@ -213,7 +213,10 @@ function loop(now) {
 /* ---------------- INIT ---------------- */
 function init() {
   current = getNextIndex();
-  render(texts[current]);
+
+  buildDOM(texts[current]);
+  fromText = texts[current];
+
   waitStart = performance.now();
   requestAnimationFrame(loop);
 }
