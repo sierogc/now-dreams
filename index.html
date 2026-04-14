@@ -28,7 +28,7 @@
       min-height: 100vh;
     }
 
-    /* 🔥 FIX: ALLINEAMENTO TOP (NON CENTER) */
+    /* TOP ALIGN FIX */
     .left,
     .right {
       width: 50%;
@@ -50,18 +50,12 @@
     /* RIGHT TEXT */
     .text {
       width: 80%;
-    }
-
-    h1 {
-      font-weight: 400;
-      font-size: 28px;
-      margin-bottom: 16px;
-      line-height: 1;
+      text-align: left; /* esplicito */
     }
 
     p {
       font-weight: 400;
-      font-size: 16px;
+      font-size: 18.4px; /* +15% rispetto a 16px */
       line-height: 1.5;
     }
 
@@ -88,12 +82,8 @@
 
     /* LARGE SCREENS */
     @media (min-width: 1600px) {
-      h1 {
-        font-size: 34px;
-      }
-
       p {
-        font-size: 18px;
+        font-size: 21px;
       }
     }
   </style>
@@ -105,16 +95,16 @@
 
     <!-- LEFT -->
     <div class="left">
-      <img src="images/image1.jpg" alt="immagine progetto" />
+      <img src="images/image1.webp" alt="immagine progetto" />
     </div>
 
     <!-- RIGHT -->
     <div class="right">
       <div class="text">
-        <h1>Titolo progetto</h1>
         <p>
-          Testo del progetto. Layout split screen pulito e coerente.
-          L’immagine e il testo ora partono dallo stesso punto verticale (top aligned).
+          Testo del progetto senza titolo, solo corpo. 
+          Il layout mantiene una struttura editoriale pulita, con allineamento top tra immagine e testo,
+          e una gerarchia tipografica ridotta al minimo per un approccio più diretto e narrativo.
         </p>
       </div>
     </div>
