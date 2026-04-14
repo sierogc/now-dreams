@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Split Responsive Project</title>
+  <title>Split Screen Project</title>
+
+  <!-- ⚡ PRELOAD IMMAGINI (performance) -->
+  <link rel="preload" as="image" href="images/image1.webp">
 
   <style>
     * {
@@ -18,14 +21,31 @@
       color: black;
     }
 
-    /* SPLIT DESKTOP */
+    /* SPLIT LAYOUT */
     .container {
       display: flex;
-      height: 100vh;
       width: 100vw;
+      height: 100vh;
     }
 
-    .left,
+    /* LEFT IMAGE SIDE */
+    .left {
+      width: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+    }
+
+    .left img {
+      width: 100%;
+      max-width: 420px;        /* controllo editoriale */
+      aspect-ratio: 4 / 5;     /* formato fisso coerente */
+      object-fit: cover;       /* ritaglio pulito */
+      display: block;
+    }
+
+    /* RIGHT TEXT SIDE */
     .right {
       width: 50%;
       display: flex;
@@ -34,15 +54,6 @@
       padding: 40px;
     }
 
-    /* IMMAGINE */
-    .left img {
-      max-width: 85%;
-      max-height: 85%;
-      object-fit: contain;
-      display: block;
-    }
-
-    /* TESTO */
     .text {
       width: 80%;
     }
@@ -59,7 +70,7 @@
       line-height: 1.5;
     }
 
-    /* 📱 RESPONSIVE */
+    /* 📱 MOBILE */
     @media (max-width: 768px) {
       .container {
         flex-direction: column;
@@ -74,7 +85,6 @@
 
       .left img {
         max-width: 90%;
-        max-height: 90%;
       }
 
       .text {
@@ -83,7 +93,7 @@
       }
     }
 
-    /* schermi molto grandi */
+    /* 🖥️ LARGE SCREENS */
     @media (min-width: 1600px) {
       h1 {
         font-size: 34px;
@@ -100,18 +110,18 @@
 
   <div class="container">
 
-    <!-- LEFT -->
+    <!-- LEFT: IMAGE -->
     <div class="left">
       <img src="images/image1.jpg" alt="immagine progetto" />
     </div>
 
-    <!-- RIGHT -->
+    <!-- RIGHT: TEXT -->
     <div class="right">
       <div class="text">
         <h1>Titolo progetto</h1>
         <p>
-          Testo del progetto. Layout split screen perfettamente bilanciato su desktop,
-          e adattivo su mobile con stacking verticale.
+          Testo del progetto. Layout split screen pulito, coerente e responsive.
+          L’immagine mantiene sempre un rapporto 4:5 e si comporta come un elemento editoriale.
         </p>
       </div>
     </div>
