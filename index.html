@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Generative Morph System</title>
+  <title>Frame-Based Morph System</title>
 
   <link rel="preload" as="image" href="images/image1.webp">
 
@@ -26,7 +26,7 @@
       min-height: 100vh;
     }
 
-    /* 🔥 SINISTRA = IMMAGINE */
+    /* IMMAGINE SINISTRA */
     .left {
       width: 50%;
       display: flex;
@@ -43,7 +43,7 @@
       display: block;
     }
 
-    /* 🔥 DESTRA = TESTO */
+    /* TESTO DESTRA */
     .right {
       width: 50%;
       display: flex;
@@ -57,9 +57,8 @@
       font-size: 24px;
       line-height: 1.5;
       font-weight: 400;
-
       text-align: justify;
-      text-align-last: left; /* 👈 ultimo rigo a sinistra */
+      text-align-last: left;
     }
 
     .char {
@@ -93,12 +92,12 @@
 
 <div class="container">
 
-  <!-- IMMAGINE SINISTRA -->
+  <!-- LEFT IMAGE -->
   <div class="left">
     <img src="images/image1.webp" alt="immagine progetto" />
   </div>
 
-  <!-- TESTO DESTRA -->
+  <!-- RIGHT TEXT -->
   <div class="right">
     <div id="text" class="text"></div>
   </div>
@@ -120,7 +119,18 @@ const texts = [
 let currentIndex = -1;
 let previousIndex = -1;
 
-/* ---------------- RANDOM ---------------- */
+/* ---------------- STATE MACHINE ---------------- */
+let phase = "wait"; // wait | morph
+let waitStart = performance.now();
+
+let morphStart = 0;
+const WAIT_TIME = 6000;
+const MORPH_TIME = 2200; // durata transizione
+
+let oldText = "";
+let newText = "";
+
+/* ---------------- UTILS ---------------- */
 function getNextIndex() {
   let i;
   do {
@@ -129,68 +139,78 @@ function getNextIndex() {
   return i;
 }
 
-/* ---------------- BUILD ---------------- */
-function buildText(text) {
-  const container = document.getElementById("text");
-  container.innerHTML = "";
+/* ---------------- INIT TEXT ---------------- */
+function renderText(text) {
+  const el = document.getElementById("text");
+  el.innerHTML = "";
 
   [...text].forEach(letter => {
     const span = document.createElement("span");
     span.className = "char";
     span.textContent = letter;
-    container.appendChild(span);
+    el.appendChild(span);
   });
 }
 
-/* ---------------- MORPH (PIÙ LENTO) ---------------- */
-function morphTo(newText) {
-  const chars = Array.from(document.querySelectorAll(".char"));
-  const newChars = [...newText];
+/* ---------------- FRAME MORPH ---------------- */
+function updateMorph(progress) {
+  const chars = document.querySelectorAll(".char");
+  const target = [...newText];
 
-  let frame = 0;
-  const steps = 40; // 👈 più lento (prima ~22)
+  chars.forEach((el, i) => {
+    if (Math.random() < progress) {
+      el.textContent = target[i] || " ";
+    }
+  });
+}
 
-  const interval = setInterval(() => {
+/* ---------------- LOOP FRAME-BASED ---------------- */
+function loop(now) {
 
-    const progress = frame / steps;
+  if (phase === "wait") {
 
-    chars.forEach((el, i) => {
-      if (Math.random() < progress) {
-        el.textContent = newChars[i] || " ";
-      }
-    });
+    if (now - waitStart > WAIT_TIME) {
 
-    frame++;
+      // start morph
+      phase = "morph";
+      morphStart = now;
 
-    if (frame > steps) {
-      clearInterval(interval);
-      buildText(newText);
+      oldText = texts[currentIndex];
+      previousIndex = currentIndex;
+      currentIndex = getNextIndex();
+      newText = texts[currentIndex];
+
+      renderText(oldText);
     }
 
-  }, 60);
-}
+  }
 
-/* ---------------- INIT ---------------- */
-function init() {
-  currentIndex = getNextIndex();
-  buildText(texts[currentIndex]);
-}
+  if (phase === "morph") {
 
-/* ---------------- LOOP ---------------- */
-function changeText() {
-  previousIndex = currentIndex;
-  currentIndex = getNextIndex();
-  morphTo(texts[currentIndex]);
+    let progress = (now - morphStart) / MORPH_TIME;
+    if (progress > 1) progress = 1;
+
+    updateMorph(progress);
+
+    if (progress === 1) {
+      phase = "wait";
+      waitStart = now;
+    }
+  }
+
+  requestAnimationFrame(loop);
 }
 
 /* ---------------- START ---------------- */
-init();
+function init() {
+  currentIndex = getNextIndex();
+  renderText(texts[currentIndex]);
 
-/* 🔥 morph parte dopo 6 secondi */
-setTimeout(() => {
-  changeText();
-  setInterval(changeText, 15000);
-}, 6000);
+  waitStart = performance.now();
+  requestAnimationFrame(loop);
+}
+
+init();
 
 </script>
 
