@@ -28,7 +28,7 @@
       min-height: 100vh;
     }
 
-    /* TOP ALIGN FIX */
+    /* TOP ALIGN */
     .left,
     .right {
       width: 50%;
@@ -50,12 +50,12 @@
     /* RIGHT TEXT */
     .text {
       width: 80%;
-      text-align: left; /* esplicito */
+      text-align: justify; /* ✔ giustificato */
     }
 
     p {
       font-weight: 400;
-      font-size: 18.4px; /* +15% rispetto a 16px */
+      font-size: 24px;
       line-height: 1.5;
     }
 
@@ -83,7 +83,7 @@
     /* LARGE SCREENS */
     @media (min-width: 1600px) {
       p {
-        font-size: 21px;
+        font-size: 28px;
       }
     }
   </style>
@@ -102,9 +102,8 @@
     <div class="right">
       <div class="text">
         <p>
-          Testo del progetto senza titolo, solo corpo. 
-          Il layout mantiene una struttura editoriale pulita, con allineamento top tra immagine e testo,
-          e una gerarchia tipografica ridotta al minimo per un approccio più diretto e narrativo.
+          Testo del progetto senza titolo, solo corpo. Il layout mantiene una struttura editoriale pulita,
+          con allineamento top tra immagine e testo e una composizione tipografica giustificata.
         </p>
       </div>
     </div>
