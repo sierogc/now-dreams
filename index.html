@@ -6,14 +6,20 @@
 
 <style>
 
+/* =======================
+   CONFIG
+======================= */
+
 :root {
-  --baseline: 12px;
   --font-size: 24px;
   --text-width: 520px;
-  --cycle-time: 6000; /* 🔧 tempo totale ciclo (immagine + testo) */
+  --cycle: 6000; /* 🔧 tempo totale ciclo */
 }
 
-/* RESET */
+/* =======================
+   RESET
+======================= */
+
 * {
   margin: 0;
   padding: 0;
@@ -26,7 +32,10 @@ body {
   overflow: hidden;
 }
 
-/* LAYOUT */
+/* =======================
+   LAYOUT
+======================= */
+
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -37,10 +46,12 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: calc(var(--baseline) * 4);
+  padding: 40px;
 }
 
-/* ================= IMAGE CINEMATIC ================= */
+/* =======================
+   IMAGE (BASE)
+======================= */
 
 .image-wrapper {
   position: relative;
@@ -51,27 +62,18 @@ body {
   background: white;
 }
 
-/* cinematic feel */
 .img {
   position: absolute;
   width: 100%;
   height: 100%;
   object-fit: cover;
-
-  opacity: 0;
-  transform: scale(1.05);
-
-  transition:
-    opacity 1.4s ease-in-out,
-    transform 1.8s ease-in-out;
-}
-
-.img.active {
   opacity: 1;
   transform: scale(1);
 }
 
-/* ================= TEXT ================= */
+/* =======================
+   TEXT
+======================= */
 
 .text {
   width: 100%;
@@ -92,7 +94,9 @@ body {
   display: inline-block;
 }
 
-/* ================= MOBILE ================= */
+/* =======================
+   MOBILE
+======================= */
 
 @media (max-width: 768px) {
   .container {
@@ -110,7 +114,7 @@ body {
   <!-- IMAGE -->
   <div class="col">
     <div class="image-wrapper">
-      <img id="imgA" class="img active">
+      <img id="imgA" class="img">
       <img id="imgB" class="img">
     </div>
   </div>
@@ -124,13 +128,19 @@ body {
 
 <script>
 
-/* ================= DATA ================= */
+/* =======================
+   IMAGES (10 future-ready)
+======================= */
 
 const images = [
   "images/image1.webp",
   "images/image2.webp"
-  // poi: image3.webp ... image10.webp
+  // ... image3.webp → image10.webp
 ];
+
+/* =======================
+   TEXTS
+======================= */
 
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
@@ -141,54 +151,87 @@ const texts = [
   "Il sistema genera significato quando inizia a corrodersi."
 ];
 
-/* ================= CONFIG ================= */
+/* =======================
+   TIMING
+======================= */
 
-const CYCLE_TIME = 6000;     // 🔧 sync totale
-const MORPH_RATIO = 0.7;      // 🔧 quando inizia morph testo (0–1)
+const CYCLE_TIME = 6000;   // 🔧 sync totale
+const MORPH_START = 0.6;   // 🔧 quando parte morph testo
 
-/* ================= STATE ================= */
-
-let index = 0;
-let nextIndex = 1;
-
-let currentImage = 0;
-let lastImage = 0;
-
-let chars = [];
-let fromText = "";
-let toText = "";
+/* =======================
+   STATE
+======================= */
 
 let phaseStart = performance.now();
 
-/* ================= IMAGE SYSTEM ================= */
+let textIndex = 0;
+let nextText = 1;
 
-function getNextIndex(max, current) {
+let imgIndex = 0;
+
+let fromText = "";
+let toText = "";
+
+let chars = [];
+
+/* =======================
+   IMAGE SMATERIALIZATION
+======================= */
+
+function getNextImage() {
   let i;
   do {
-    i = Math.floor(Math.random() * max);
-  } while (i === current);
+    i = Math.floor(Math.random() * images.length);
+  } while (i === imgIndex);
   return i;
 }
 
-function setImage(i) {
+function dissolveImage(nextIndex) {
 
   const a = document.getElementById("imgA");
   const b = document.getElementById("imgB");
 
-  const next = images[i];
-
   const active = a.classList.contains("active") ? a : b;
   const inactive = active === a ? b : a;
 
-  inactive.src = next;
+  inactive.src = images[nextIndex];
 
-  inactive.classList.add("active");
-  active.classList.remove("active");
+  let p = 0;
 
-  currentImage = i;
+  function animate() {
+
+    p += 0.02;
+
+    if (p > 1) p = 1;
+
+    /* 🔥 SMATERIALIZZAZIONE */
+    active.style.opacity = 1 - p;
+    active.style.filter = `blur(${p * 8}px)`;
+    active.style.transform = `scale(${1 + p * 0.1})`;
+
+    inactive.style.opacity = p;
+    inactive.style.transform = `scale(${1 + (1 - p) * 0.05})`;
+
+    if (p < 1) {
+      requestAnimationFrame(animate);
+    } else {
+
+      active.classList.remove("active");
+      inactive.classList.add("active");
+
+      active.style = "";
+      inactive.style = "";
+
+      imgIndex = nextIndex;
+    }
+  }
+
+  animate();
 }
 
-/* ================= TEXT SYSTEM ================= */
+/* =======================
+   TEXT BUILD
+======================= */
 
 function build(text) {
 
@@ -219,6 +262,10 @@ function build(text) {
   });
 }
 
+/* =======================
+   NORMALIZE TEXTS
+======================= */
+
 function normalize(a, b) {
 
   const max = Math.max(a.length, b.length);
@@ -228,6 +275,10 @@ function normalize(a, b) {
 
   return [a, b];
 }
+
+/* =======================
+   TEXT MORPH
+======================= */
 
 function morph(t) {
 
@@ -240,29 +291,28 @@ function morph(t) {
   }
 }
 
-/* ================= SYNC CYCLE ================= */
+/* =======================
+   LOOP SYNC
+======================= */
 
-function cycle(now) {
+function loop(now) {
 
   const elapsed = now - phaseStart;
+  const t = elapsed / CYCLE_TIME;
 
-  const progress = elapsed / CYCLE_TIME;
-
-  /* ================= IMAGE CHANGE ================= */
-  if (progress >= 1) {
+  /* ================= IMAGE ================= */
+  if (t >= 1) {
 
     phaseStart = now;
 
-    lastImage = currentImage;
-    currentImage = getNextIndex(images.length, currentImage);
+    const nextImg = getNextImage();
+    dissolveImage(nextImg);
 
-    setImage(currentImage);
+    /* TEXT SWITCH */
+    textIndex = nextText;
+    nextText = (nextText + 1) % texts.length;
 
-    /* TEXT INDEX */
-    index = nextIndex;
-    nextIndex = (nextIndex + 1) % texts.length;
-
-    const norm = normalize(texts[index], texts[nextIndex]);
+    const norm = normalize(texts[textIndex], texts[nextText]);
 
     fromText = norm[0];
     toText = norm[1];
@@ -271,32 +321,36 @@ function cycle(now) {
   }
 
   /* ================= TEXT MORPH ================= */
+  if (t > MORPH_START) {
 
-  if (progress > MORPH_RATIO) {
+    const mt = (t - MORPH_START) / (1 - MORPH_START);
 
-    const t = (progress - MORPH_RATIO) / (1 - MORPH_RATIO);
-    morph(t > 1 ? 1 : t);
+    morph(mt > 1 ? 1 : mt);
   }
 
-  requestAnimationFrame(cycle);
+  requestAnimationFrame(loop);
 }
 
-/* ================= INIT ================= */
+/* =======================
+   INIT
+======================= */
 
 function init() {
 
-  currentImage = Math.floor(Math.random() * images.length);
-  document.getElementById("imgA").src = images[currentImage];
-  document.getElementById("imgA").classList.add("active");
+  imgIndex = Math.floor(Math.random() * images.length);
 
-  index = Math.floor(Math.random() * texts.length);
-  fromText = texts[index];
+  const imgA = document.getElementById("imgA");
+  imgA.src = images[imgIndex];
+  imgA.classList.add("active");
+
+  textIndex = Math.floor(Math.random() * texts.length);
+  fromText = texts[textIndex];
 
   build(fromText);
 
   phaseStart = performance.now();
 
-  requestAnimationFrame(cycle);
+  requestAnimationFrame(loop);
 }
 
 init();
