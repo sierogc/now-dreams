@@ -12,6 +12,7 @@
   --text-width: 520px;
 }
 
+/* RESET */
 * {
   margin: 0;
   padding: 0;
@@ -23,6 +24,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
 }
 
+/* LAYOUT */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -36,6 +38,7 @@ body {
   padding: calc(var(--baseline) * 4);
 }
 
+/* IMAGE */
 .image {
   width: 100%;
   max-width: 420px;
@@ -43,6 +46,7 @@ body {
   object-fit: cover;
 }
 
+/* TEXT */
 .text {
   width: 100%;
   max-width: var(--text-width);
@@ -52,20 +56,19 @@ body {
 
   text-align: justify;
   text-align-last: left;
+}
 
-  word-break: keep-all;
-  overflow-wrap: normal;
-  hyphens: none;
+/* CHAR */
+.char {
+  display: inline-block;
+  transition: color 0.15s linear;
 }
 
 .word {
   white-space: nowrap;
 }
 
-.char {
-  display: inline-block;
-}
-
+/* MOBILE */
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
@@ -77,17 +80,20 @@ body {
 <body>
 
 <div class="container">
+
   <div class="col">
-    <img src="images/image1.webp" class="image"/>
+    <img src="images/image1.webp" class="image">
   </div>
+
   <div class="col">
     <div id="text" class="text"></div>
   </div>
+
 </div>
 
 <script>
 
-/* ================= TESTI ================= */
+/* ================= TEXTS ================= */
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
   "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
@@ -97,133 +103,109 @@ const texts = [
   "Il sistema genera significato quando inizia a corrodersi."
 ];
 
-/* ================= PARAMETRI ================= */
-const WAIT_TIME = 6000;
-const MORPH_TIME = 8000;
+/* ================= PARAMS ================= */
+const WAIT_TIME = 6000;     // pausa tra testi
+const MORPH_TIME = 9000;    // durata morph (più alto = più fluido)
 
-/* ================= STATO ================= */
-let current = -1;
-let previous = -1;
+/* ================= STATE ================= */
+let current = 0;
+let next = 1;
 
-let phase = "wait";
-let waitStart = performance.now();
-let morphStart = 0;
+let from = "";
+let to = "";
 
-let fromWords = [];
-let toWords = [];
+let chars = [];
 
-let wordSpans = [];
+/* ================= BUILD ================= */
+function build(text) {
 
-/* ================= RANDOM ================= */
-function getNextIndex() {
-  let i;
-  do {
-    i = Math.floor(Math.random() * texts.length);
-  } while (i === current || i === previous);
-  return i;
-}
+  const el = document.getElementById("text");
+  el.innerHTML = "";
 
-/* ================= NORMALIZE WORDS ================= */
-function normalizeWords(a, b) {
-  const A = a.split(" ");
-  const B = b.split(" ");
+  chars = [];
 
-  const max = Math.max(A.length, B.length);
-
-  while (A.length < max) A.push("");
-  while (B.length < max) B.push("");
-
-  return [A, B];
-}
-
-/* ================= BUILD DOM ================= */
-function buildDOM(words) {
-  const container = document.getElementById("text");
-  container.innerHTML = "";
-
-  wordSpans = [];
+  const words = text.split(" ");
 
   words.forEach(word => {
 
     const wordEl = document.createElement("span");
     wordEl.className = "word";
 
-    const chars = [];
-
     [...word].forEach(letter => {
-      const charEl = document.createElement("span");
-      charEl.className = "char";
-      charEl.textContent = letter;
 
-      chars.push(charEl);
-      wordEl.appendChild(charEl);
+      const c = document.createElement("span");
+      c.className = "char";
+      c.textContent = letter;
+
+      chars.push(c);
+      wordEl.appendChild(c);
     });
 
-    wordSpans.push(chars);
-
-    container.appendChild(wordEl);
-    container.appendChild(document.createTextNode(" "));
+    el.appendChild(wordEl);
+    el.appendChild(document.createTextNode(" "));
   });
 }
 
-/* ================= MORPH ================= */
-function updateMorph(progress) {
+/* ================= NORMALIZE ================= */
+function normalize(a, b) {
 
-  wordSpans.forEach((chars, i) => {
+  const max = Math.max(a.length, b.length);
 
-    const from = fromWords[i];
-    const to = toWords[i];
+  while (a.length < max) a += " ";
+  while (b.length < max) b += " ";
 
-    const maxLen = Math.max(from.length, to.length);
+  return [a, b];
+}
 
-    for (let j = 0; j < maxLen; j++) {
+/* ================= CLEAN MORPH ================= */
+function updateMorph(t) {
 
-      if (!chars[j]) continue;
+  for (let i = 0; i < chars.length; i++) {
 
-      const fromChar = from[j] || "";
-      const toChar = to[j] || "";
+    const a = from[i] || " ";
+    const b = to[i] || " ";
 
-      chars[j].textContent =
-        (progress >= (j / maxLen)) ? toChar : fromChar;
-    }
-  });
+    const shouldChange = t > (i / chars.length);
+
+    chars[i].textContent = shouldChange ? b : a;
+  }
 }
 
 /* ================= LOOP ================= */
+let phase = "wait";
+let start = performance.now();
+
 function loop(now) {
 
   if (phase === "wait") {
 
-    if (now - waitStart > WAIT_TIME) {
+    if (now - start > WAIT_TIME) {
 
       phase = "morph";
-      morphStart = now;
+      start = now;
 
-      previous = current;
-      current = getNextIndex();
+      current = next;
+      next = (next + 1) % texts.length;
 
-      const [A, B] = normalizeWords(
-        texts[previous === -1 ? current : previous],
-        texts[current]
-      );
+      const norm = normalize(texts[current], texts[next]);
 
-      fromWords = A;
-      toWords = B;
+      from = norm[0];
+      to = norm[1];
 
-      buildDOM(fromWords);
+      build(from);
     }
   }
 
   if (phase === "morph") {
 
-    let progress = (now - morphStart) / MORPH_TIME;
-    if (progress > 1) progress = 1;
+    let t = (now - start) / MORPH_TIME;
+    if (t > 1) t = 1;
 
-    updateMorph(progress);
+    updateMorph(t);
 
-    if (progress === 1) {
+    if (t === 1) {
       phase = "wait";
-      waitStart = now;
+      start = now;
     }
   }
 
@@ -232,11 +214,8 @@ function loop(now) {
 
 /* ================= INIT ================= */
 function init() {
-  current = getNextIndex();
-  fromWords = texts[current].split(" ");
-  buildDOM(fromWords);
-
-  waitStart = performance.now();
+  from = texts[0];
+  build(from);
   requestAnimationFrame(loop);
 }
 
