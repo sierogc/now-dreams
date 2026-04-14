@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
+
 :root {
   --baseline: 12px;
   --font-size: 24px;
-  --line-height: 3;
   --text-width: 520px;
+  --cycle-time: 6000; /* 🔧 tempo totale ciclo (immagine + testo) */
 }
 
 /* RESET */
@@ -22,13 +23,14 @@
 body {
   background: white;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  overflow: hidden;
 }
 
 /* LAYOUT */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .col {
@@ -38,42 +40,66 @@ body {
   padding: calc(var(--baseline) * 4);
 }
 
-/* IMAGE */
-.image {
+/* ================= IMAGE CINEMATIC ================= */
+
+.image-wrapper {
+  position: relative;
   width: 100%;
   max-width: 420px;
-  aspect-ratio: 4/5;
-  object-fit: cover;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: white;
 }
 
-/* TEXT */
+/* cinematic feel */
+.img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  opacity: 0;
+  transform: scale(1.05);
+
+  transition:
+    opacity 1.4s ease-in-out,
+    transform 1.8s ease-in-out;
+}
+
+.img.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ================= TEXT ================= */
+
 .text {
   width: 100%;
   max-width: var(--text-width);
 
   font-size: var(--font-size);
-  line-height: calc(var(--baseline) * var(--line-height));
+  line-height: 1.4;
 
   text-align: justify;
   text-align-last: left;
-}
-
-/* CHAR */
-.char {
-  display: inline-block;
-  transition: color 0.15s linear;
 }
 
 .word {
   white-space: nowrap;
 }
 
-/* MOBILE */
+.char {
+  display: inline-block;
+}
+
+/* ================= MOBILE ================= */
+
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
   }
 }
+
 </style>
 </head>
 
@@ -81,10 +107,15 @@ body {
 
 <div class="container">
 
+  <!-- IMAGE -->
   <div class="col">
-    <img src="images/image1.webp" class="image">
+    <div class="image-wrapper">
+      <img id="imgA" class="img active">
+      <img id="imgB" class="img">
+    </div>
   </div>
 
+  <!-- TEXT -->
   <div class="col">
     <div id="text" class="text"></div>
   </div>
@@ -93,7 +124,14 @@ body {
 
 <script>
 
-/* ================= TEXTS ================= */
+/* ================= DATA ================= */
+
+const images = [
+  "images/image1.webp",
+  "images/image2.webp"
+  // poi: image3.webp ... image10.webp
+];
+
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
   "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
@@ -103,20 +141,55 @@ const texts = [
   "Il sistema genera significato quando inizia a corrodersi."
 ];
 
-/* ================= PARAMS ================= */
-const WAIT_TIME = 6000;     // pausa tra testi
-const MORPH_TIME = 9000;    // durata morph (più alto = più fluido)
+/* ================= CONFIG ================= */
+
+const CYCLE_TIME = 6000;     // 🔧 sync totale
+const MORPH_RATIO = 0.7;      // 🔧 quando inizia morph testo (0–1)
 
 /* ================= STATE ================= */
-let current = 0;
-let next = 1;
 
-let from = "";
-let to = "";
+let index = 0;
+let nextIndex = 1;
+
+let currentImage = 0;
+let lastImage = 0;
 
 let chars = [];
+let fromText = "";
+let toText = "";
 
-/* ================= BUILD ================= */
+let phaseStart = performance.now();
+
+/* ================= IMAGE SYSTEM ================= */
+
+function getNextIndex(max, current) {
+  let i;
+  do {
+    i = Math.floor(Math.random() * max);
+  } while (i === current);
+  return i;
+}
+
+function setImage(i) {
+
+  const a = document.getElementById("imgA");
+  const b = document.getElementById("imgB");
+
+  const next = images[i];
+
+  const active = a.classList.contains("active") ? a : b;
+  const inactive = active === a ? b : a;
+
+  inactive.src = next;
+
+  inactive.classList.add("active");
+  active.classList.remove("active");
+
+  currentImage = i;
+}
+
+/* ================= TEXT SYSTEM ================= */
+
 function build(text) {
 
   const el = document.getElementById("text");
@@ -128,25 +201,24 @@ function build(text) {
 
   words.forEach(word => {
 
-    const wordEl = document.createElement("span");
-    wordEl.className = "word";
+    const w = document.createElement("span");
+    w.className = "word";
 
-    [...word].forEach(letter => {
+    [...word].forEach(l => {
 
       const c = document.createElement("span");
       c.className = "char";
-      c.textContent = letter;
+      c.textContent = l;
 
       chars.push(c);
-      wordEl.appendChild(c);
+      w.appendChild(c);
     });
 
-    el.appendChild(wordEl);
+    el.appendChild(w);
     el.appendChild(document.createTextNode(" "));
   });
 }
 
-/* ================= NORMALIZE ================= */
 function normalize(a, b) {
 
   const max = Math.max(a.length, b.length);
@@ -157,256 +229,74 @@ function normalize(a, b) {
   return [a, b];
 }
 
-/* ================= CLEAN MORPH ================= */
-function updateMorph(t) {
+function morph(t) {
 
   for (let i = 0; i < chars.length; i++) {
 
-    const a = from[i] || " ";
-    const b = to[i] || " ";
+    const a = fromText[i] || " ";
+    const b = toText[i] || " ";
 
-    const shouldChange = t > (i / chars.length);
-
-    chars[i].textContent = shouldChange ? b : a;
+    chars[i].textContent = (t > i / chars.length) ? b : a;
   }
 }
 
-/* ================= LOOP ================= */
-let phase = "wait";
-let start = performance.now();
+/* ================= SYNC CYCLE ================= */
 
-function loop(now) {
+function cycle(now) {
 
-  if (phase === "wait") {
+  const elapsed = now - phaseStart;
 
-    if (now - start > WAIT_TIME) {
+  const progress = elapsed / CYCLE_TIME;
 
-      phase = "morph";
-      start = now;
+  /* ================= IMAGE CHANGE ================= */
+  if (progress >= 1) {
 
-      current = next;
-      next = (next + 1) % texts.length;
+    phaseStart = now;
 
-      const norm = normalize(texts[current], texts[next]);
+    lastImage = currentImage;
+    currentImage = getNextIndex(images.length, currentImage);
 
-      from = norm[0];
-      to = norm[1];
+    setImage(currentImage);
 
-      build(from);
-    }
+    /* TEXT INDEX */
+    index = nextIndex;
+    nextIndex = (nextIndex + 1) % texts.length;
+
+    const norm = normalize(texts[index], texts[nextIndex]);
+
+    fromText = norm[0];
+    toText = norm[1];
+
+    build(fromText);
   }
 
-  if (phase === "morph") {
+  /* ================= TEXT MORPH ================= */
 
-    let t = (now - start) / MORPH_TIME;
-    if (t > 1) t = 1;
+  if (progress > MORPH_RATIO) {
 
-    updateMorph(t);
-
-    if (t === 1) {
-      phase = "wait";
-      start = now;
-    }
+    const t = (progress - MORPH_RATIO) / (1 - MORPH_RATIO);
+    morph(t > 1 ? 1 : t);
   }
 
-  requestAnimationFrame(loop);
+  requestAnimationFrame(cycle);
 }
 
 /* ================= INIT ================= */
+
 function init() {
-  from = texts[0];
-  build(from);
-  requestAnimationFrame(loop);
-}
 
-init();
+  currentImage = Math.floor(Math.random() * images.length);
+  document.getElementById("imgA").src = images[currentImage];
+  document.getElementById("imgA").classList.add("active");
 
-</script>
+  index = Math.floor(Math.random() * texts.length);
+  fromText = texts[index];
 
-</body>
-</html>  align-items: flex-start;
-  padding: calc(var(--baseline) * 4);
-}
+  build(fromText);
 
-/* IMAGE */
-.image {
-  width: 100%;
-  max-width: 420px;
-  aspect-ratio: 4/5;
-  object-fit: cover;
-}
+  phaseStart = performance.now();
 
-/* TEXT */
-.text {
-  width: 100%;
-  max-width: var(--text-width);
-
-  font-size: var(--font-size);
-  line-height: calc(var(--baseline) * var(--line-height));
-
-  text-align: justify;
-  text-align-last: left;
-}
-
-/* CHAR */
-.char {
-  display: inline-block;
-  transition: color 0.15s linear;
-}
-
-.word {
-  white-space: nowrap;
-}
-
-/* MOBILE */
-@media (max-width: 768px) {
-  .container {
-    grid-template-columns: 1fr;
-  }
-}
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-  <div class="col">
-    <img src="images/image1.webp" class="image">
-  </div>
-
-  <div class="col">
-    <div id="text" class="text"></div>
-  </div>
-
-</div>
-
-<script>
-
-/* ================= TEXTS ================= */
-const texts = [
-  "La periferia è un linguaggio che si scrive da solo nel tempo.",
-  "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
-  "Ogni immagine è un errore che insiste nel diventare memoria.",
-  "La realtà non si interrompe ma cambia frequenza di lettura.",
-  "Non esiste un inizio solo una sequenza che decide di ripetersi.",
-  "Il sistema genera significato quando inizia a corrodersi."
-];
-
-/* ================= PARAMS ================= */
-const WAIT_TIME = 6000;     // pausa tra testi
-const MORPH_TIME = 9000;    // durata morph (più alto = più fluido)
-
-/* ================= STATE ================= */
-let current = 0;
-let next = 1;
-
-let from = "";
-let to = "";
-
-let chars = [];
-
-/* ================= BUILD ================= */
-function build(text) {
-
-  const el = document.getElementById("text");
-  el.innerHTML = "";
-
-  chars = [];
-
-  const words = text.split(" ");
-
-  words.forEach(word => {
-
-    const wordEl = document.createElement("span");
-    wordEl.className = "word";
-
-    [...word].forEach(letter => {
-
-      const c = document.createElement("span");
-      c.className = "char";
-      c.textContent = letter;
-
-      chars.push(c);
-      wordEl.appendChild(c);
-    });
-
-    el.appendChild(wordEl);
-    el.appendChild(document.createTextNode(" "));
-  });
-}
-
-/* ================= NORMALIZE ================= */
-function normalize(a, b) {
-
-  const max = Math.max(a.length, b.length);
-
-  while (a.length < max) a += " ";
-  while (b.length < max) b += " ";
-
-  return [a, b];
-}
-
-/* ================= CLEAN MORPH ================= */
-function updateMorph(t) {
-
-  for (let i = 0; i < chars.length; i++) {
-
-    const a = from[i] || " ";
-    const b = to[i] || " ";
-
-    const shouldChange = t > (i / chars.length);
-
-    chars[i].textContent = shouldChange ? b : a;
-  }
-}
-
-/* ================= LOOP ================= */
-let phase = "wait";
-let start = performance.now();
-
-function loop(now) {
-
-  if (phase === "wait") {
-
-    if (now - start > WAIT_TIME) {
-
-      phase = "morph";
-      start = now;
-
-      current = next;
-      next = (next + 1) % texts.length;
-
-      const norm = normalize(texts[current], texts[next]);
-
-      from = norm[0];
-      to = norm[1];
-
-      build(from);
-    }
-  }
-
-  if (phase === "morph") {
-
-    let t = (now - start) / MORPH_TIME;
-    if (t > 1) t = 1;
-
-    updateMorph(t);
-
-    if (t === 1) {
-      phase = "wait";
-      start = now;
-    }
-  }
-
-  requestAnimationFrame(loop);
-}
-
-/* ================= INIT ================= */
-function init() {
-  from = texts[0];
-  build(from);
-  requestAnimationFrame(loop);
+  requestAnimationFrame(cycle);
 }
 
 init();
