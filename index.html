@@ -26,7 +26,16 @@
       min-height: 100vh;
     }
 
-    .left,
+    /* 🔥 SINISTRA = TESTO */
+    .left {
+      width: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px;
+    }
+
+    /* 🔥 DESTRA = IMMAGINE */
     .right {
       width: 50%;
       display: flex;
@@ -36,7 +45,7 @@
     }
 
     /* IMAGE */
-    .left img {
+    .right img {
       width: 100%;
       max-width: 420px;
       aspect-ratio: 4 / 5;
@@ -53,13 +62,9 @@
       font-weight: 400;
     }
 
-    .word {
-      display: inline-block;
-      white-space: pre;
-    }
-
     .char {
       display: inline-block;
+      white-space: pre;
     }
 
     @media (max-width: 768px) {
@@ -73,7 +78,7 @@
         padding: 20px;
       }
 
-      .left img {
+      .right img {
         max-width: 90%;
       }
 
@@ -88,12 +93,12 @@
 
 <div class="container">
 
-  <!-- LEFT TEXT -->
+  <!-- SINISTRA: TESTO -->
   <div class="left">
     <div id="text" class="text"></div>
   </div>
 
-  <!-- RIGHT IMAGE -->
+  <!-- DESTRA: IMMAGINE -->
   <div class="right">
     <img src="images/image1.webp" alt="immagine progetto" />
   </div>
@@ -101,9 +106,8 @@
 </div>
 
 <script>
-/* -----------------------------
-   TEXTS
-------------------------------*/
+
+/* ---------------- TEXTS ---------------- */
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
   "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
@@ -116,9 +120,7 @@ const texts = [
 let currentIndex = -1;
 let previousIndex = -1;
 
-/* -----------------------------
-   INIT RANDOM
-------------------------------*/
+/* ---------------- RANDOM ---------------- */
 function getNextIndex() {
   let i;
   do {
@@ -127,62 +129,36 @@ function getNextIndex() {
   return i;
 }
 
-/* -----------------------------
-   BUILD TEXT STRUCTURE
-------------------------------*/
+/* ---------------- BUILD ---------------- */
 function buildText(text) {
   const container = document.getElementById("text");
   container.innerHTML = "";
 
-  const words = text.split(" ");
-
-  words.forEach(word => {
-    const wordSpan = document.createElement("span");
-    wordSpan.className = "word";
-
-    [...word].forEach(letter => {
-      const charSpan = document.createElement("span");
-      charSpan.className = "char";
-      charSpan.textContent = letter;
-      wordSpan.appendChild(charSpan);
-    });
-
-    container.appendChild(wordSpan);
-    container.appendChild(document.createTextNode(" "));
+  [...text].forEach(letter => {
+    const span = document.createElement("span");
+    span.className = "char";
+    span.textContent = letter;
+    container.appendChild(span);
   });
 }
 
-/* -----------------------------
-   FLUID MORPH (NO SYMBOLS)
-------------------------------*/
+/* ---------------- MORPH ---------------- */
 function morphTo(newText) {
-  const container = document.getElementById("text");
-
-  const oldChars = Array.from(container.querySelectorAll(".char"));
-  const newWords = newText.split(" ");
-
-  const newCharsFlat = newWords.join(" ").split("");
-
-  const maxLen = Math.max(oldChars.length, newCharsFlat.length);
+  const chars = Array.from(document.querySelectorAll(".char"));
+  const newChars = [...newText];
 
   let frame = 0;
-  const steps = 22; // via di mezzo A/B
+  const steps = 22;
 
   const interval = setInterval(() => {
-    for (let i = 0; i < maxLen; i++) {
 
-      const oldChar = oldChars[i];
-      const newChar = newCharsFlat[i] || " ";
+    const progress = frame / steps;
 
-      const progress = frame / steps;
-
-      if (!oldChar) continue;
-
-      // probabilità di switch graduale
+    chars.forEach((el, i) => {
       if (Math.random() < progress) {
-        oldChar.textContent = newChar;
+        el.textContent = newChars[i] || " ";
       }
-    }
+    });
 
     frame++;
 
@@ -194,29 +170,23 @@ function morphTo(newText) {
   }, 60);
 }
 
-/* -----------------------------
-   INIT
-------------------------------*/
+/* ---------------- INIT ---------------- */
 function init() {
   currentIndex = getNextIndex();
   buildText(texts[currentIndex]);
 }
 
-/* -----------------------------
-   LOOP
-------------------------------*/
+/* ---------------- LOOP ---------------- */
 function changeText() {
   previousIndex = currentIndex;
   currentIndex = getNextIndex();
-
   morphTo(texts[currentIndex]);
 }
 
-/* -----------------------------
-   START
-------------------------------*/
+/* ---------------- START ---------------- */
 init();
 setInterval(changeText, 15000);
+
 </script>
 
 </body>
