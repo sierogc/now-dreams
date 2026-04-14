@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <style>
-:root {
-  --baseline: 12px;
-}
+:root { --baseline: 12px; }
 
 * {
   margin: 0;
@@ -34,6 +32,7 @@ body {
   padding: calc(var(--baseline) * 4);
 }
 
+/* IMAGE */
 .image {
   width: 100%;
   max-width: 420px;
@@ -41,13 +40,12 @@ body {
   object-fit: cover;
 }
 
+/* TEXT */
 .text {
   width: 100%;
   max-width: 520px;
-
   font-size: 24px;
   line-height: calc(var(--baseline) * 3);
-
   text-align: justify;
   text-align-last: left;
 
@@ -56,6 +54,7 @@ body {
   hyphens: none;
 }
 
+/* WORD */
 .word {
   white-space: nowrap;
 }
@@ -109,9 +108,8 @@ let morphStart = 0;
 const WAIT_TIME = 6000;
 const MORPH_TIME = 7000;
 
-let fromText = "";
-let toText = [];
-
+let fromChars = [];
+let toChars = [];
 let charSpans = [];
 
 /* ---------------- RANDOM ---------------- */
@@ -123,29 +121,30 @@ function getNextIndex() {
   return i;
 }
 
-/* ---------------- INIT DOM ---------------- */
+/* ---------------- BUILD DOM ---------------- */
 function buildDOM(text) {
-  const el = document.getElementById("text");
-  el.innerHTML = "";
+  const container = document.getElementById("text");
+  container.innerHTML = "";
 
   charSpans = [];
 
-  text.split(" ").forEach(word => {
+  const words = text.split(" ");
 
-    const wordSpan = document.createElement("span");
-    wordSpan.className = "word";
+  words.forEach(word => {
+    const wordEl = document.createElement("span");
+    wordEl.className = "word";
 
     [...word].forEach(letter => {
-      const span = document.createElement("span");
-      span.className = "char";
-      span.textContent = letter;
+      const charEl = document.createElement("span");
+      charEl.className = "char";
+      charEl.textContent = letter;
 
-      charSpans.push(span);
-      wordSpan.appendChild(span);
+      charSpans.push(charEl);
+      wordEl.appendChild(charEl);
     });
 
-    el.appendChild(wordSpan);
-    el.appendChild(document.createTextNode(" "));
+    container.appendChild(wordEl);
+    container.appendChild(document.createTextNode(" "));
   });
 }
 
@@ -156,18 +155,17 @@ function normalize(a, b) {
   while (a.length < max) a += " ";
   while (b.length < max) b += " ";
 
-  return [a, b];
+  return [a.split(""), b.split("")];
 }
 
 /* ---------------- UPDATE ---------------- */
 function updateMorph(progress) {
   for (let i = 0; i < charSpans.length; i++) {
-
-    const from = fromText[i] || " ";
-    const to = toText[i] || " ";
+    const from = fromChars[i] || " ";
+    const to = toChars[i] || " ";
 
     charSpans[i].textContent =
-      (progress > (i / charSpans.length)) ? to : from;
+      (progress >= (i / charSpans.length)) ? to : from;
   }
 }
 
@@ -175,7 +173,6 @@ function updateMorph(progress) {
 function loop(now) {
 
   if (phase === "wait") {
-
     if (now - waitStart > WAIT_TIME) {
 
       phase = "morph";
@@ -189,8 +186,13 @@ function loop(now) {
         texts[current]
       );
 
-      fromText = A;
-      toText = B.split("");
+      fromChars = A;
+      toChars = B;
+
+      // rebuild SOLO se cambia lunghezza
+      if (charSpans.length !== A.length) {
+        buildDOM(A.join(""));
+      }
     }
   }
 
@@ -213,10 +215,7 @@ function loop(now) {
 /* ---------------- INIT ---------------- */
 function init() {
   current = getNextIndex();
-
   buildDOM(texts[current]);
-  fromText = texts[current];
-
   waitStart = performance.now();
   requestAnimationFrame(loop);
 }
