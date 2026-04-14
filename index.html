@@ -4,26 +4,13 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<title>Generative Morph System</title>
-
-<link rel="preload" as="image" href="images/image1.webp">
-
 <style>
-
-/* ============================= */
-/* 🔧 VARIABILI EDITABILI */
-/* ============================= */
-
 :root {
-  --baseline: 12px; /* ritmo verticale */
-  --font-size: 24px; /* dimensione testo */
-  --line-height: 3; /* moltiplicatore baseline */
-  --text-width: 520px; /* larghezza colonna testo */
+  --baseline: 12px;
+  --font-size: 24px;
+  --line-height: 3;
+  --text-width: 520px;
 }
-
-/* ============================= */
-/* RESET */
-/* ============================= */
 
 * {
   margin: 0;
@@ -35,10 +22,6 @@ body {
   background: white;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
 }
-
-/* ============================= */
-/* LAYOUT */
-/* ============================= */
 
 .container {
   display: grid;
@@ -53,20 +36,12 @@ body {
   padding: calc(var(--baseline) * 4);
 }
 
-/* ============================= */
-/* IMMAGINE */
-/* ============================= */
-
 .image {
   width: 100%;
-  max-width: 420px; /* 🔧 modifica dimensione immagine */
+  max-width: 420px;
   aspect-ratio: 4/5;
   object-fit: cover;
 }
-
-/* ============================= */
-/* TESTO */
-/* ============================= */
 
 .text {
   width: 100%;
@@ -83,51 +58,36 @@ body {
   hyphens: none;
 }
 
-/* parole non si spezzano */
 .word {
   white-space: nowrap;
 }
 
-/* lettere controllabili */
 .char {
   display: inline-block;
 }
-
-/* ============================= */
-/* MOBILE */
-/* ============================= */
 
 @media (max-width: 768px) {
   .container {
     grid-template-columns: 1fr;
   }
 }
-
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
-  <!-- IMMAGINE SINISTRA -->
   <div class="col">
-    <img src="images/image1.webp" class="image" />
+    <img src="images/image1.webp" class="image"/>
   </div>
-
-  <!-- TESTO DESTRA -->
   <div class="col">
     <div id="text" class="text"></div>
   </div>
-
 </div>
 
 <script>
 
-/* ============================= */
-/* 🔧 TESTI EDITABILI */
-/* ============================= */
-
+/* ================= TESTI ================= */
 const texts = [
   "La periferia è un linguaggio che si scrive da solo nel tempo.",
   "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
@@ -137,17 +97,11 @@ const texts = [
   "Il sistema genera significato quando inizia a corrodersi."
 ];
 
-/* ============================= */
-/* 🔧 PARAMETRI MORPH */
-/* ============================= */
+/* ================= PARAMETRI ================= */
+const WAIT_TIME = 6000;
+const MORPH_TIME = 8000;
 
-const WAIT_TIME = 6000;   // ⏱ pausa tra i morph (ms)
-const MORPH_TIME = 8000;  // 🎞 durata morph (più alto = più lento)
-
-/* ============================= */
-/* STATO */
-/* ============================= */
-
+/* ================= STATO ================= */
 let current = -1;
 let previous = -1;
 
@@ -155,15 +109,12 @@ let phase = "wait";
 let waitStart = performance.now();
 let morphStart = 0;
 
-let fromText = "";
-let toText = "";
+let fromWords = [];
+let toWords = [];
 
-let charSpans = [];
+let wordSpans = [];
 
-/* ============================= */
-/* RANDOM (no ripetizioni) */
-/* ============================= */
-
+/* ================= RANDOM ================= */
 function getNextIndex() {
   let i;
   do {
@@ -172,79 +123,73 @@ function getNextIndex() {
   return i;
 }
 
-/* ============================= */
-/* BUILD DOM (UNA SOLA VOLTA PER MORPH) */
-/* ============================= */
+/* ================= NORMALIZE WORDS ================= */
+function normalizeWords(a, b) {
+  const A = a.split(" ");
+  const B = b.split(" ");
 
-function buildDOM(text) {
+  const max = Math.max(A.length, B.length);
 
+  while (A.length < max) A.push("");
+  while (B.length < max) B.push("");
+
+  return [A, B];
+}
+
+/* ================= BUILD DOM ================= */
+function buildDOM(words) {
   const container = document.getElementById("text");
   container.innerHTML = "";
 
-  charSpans = [];
-
-  /* dividiamo in parole per mantenere justify corretto */
-  const words = text.split(" ");
+  wordSpans = [];
 
   words.forEach(word => {
 
     const wordEl = document.createElement("span");
     wordEl.className = "word";
 
-    [...word].forEach(letter => {
+    const chars = [];
 
+    [...word].forEach(letter => {
       const charEl = document.createElement("span");
       charEl.className = "char";
       charEl.textContent = letter;
 
-      charSpans.push(charEl);
+      chars.push(charEl);
       wordEl.appendChild(charEl);
     });
+
+    wordSpans.push(chars);
 
     container.appendChild(wordEl);
     container.appendChild(document.createTextNode(" "));
   });
 }
 
-/* ============================= */
-/* NORMALIZE (lunghezze uguali) */
-/* ============================= */
-
-function normalize(a, b) {
-
-  const max = Math.max(a.length, b.length);
-
-  while (a.length < max) a += " ";
-  while (b.length < max) b += " ";
-
-  return [a, b];
-}
-
-/* ============================= */
-/* MORPH CONTINUO (CORE) */
-/* ============================= */
-
+/* ================= MORPH ================= */
 function updateMorph(progress) {
 
-  for (let i = 0; i < charSpans.length; i++) {
+  wordSpans.forEach((chars, i) => {
 
-    const from = fromText[i] || " ";
-    const to = toText[i] || " ";
+    const from = fromWords[i];
+    const to = toWords[i];
 
-    /* 
-    🔥 LOGICA CONTINUA:
-    tutte le lettere avanzano insieme
-    */
+    const maxLen = Math.max(from.length, to.length);
 
-    charSpans[i].textContent =
-      (progress >= (i / charSpans.length)) ? to : from;
-  }
+    for (let j = 0; j < maxLen; j++) {
+
+      if (!chars[j]) continue;
+
+      const fromChar = from[j] || "";
+      const toChar = to[j] || "";
+
+      chars[j].textContent =
+        (progress >= (j / maxLen)) ? toChar : fromChar;
+    }
+  });
 }
 
-/* ============================= */
-/* LOOP FRAME-BASED */
-/* ============================= */
-
+/* ================= LOOP ================= */
 function loop(now) {
 
   if (phase === "wait") {
@@ -257,16 +202,15 @@ function loop(now) {
       previous = current;
       current = getNextIndex();
 
-      let A = texts[previous === -1 ? current : previous];
-      let B = texts[current];
+      const [A, B] = normalizeWords(
+        texts[previous === -1 ? current : previous],
+        texts[current]
+      );
 
-      const norm = normalize(A, B);
+      fromWords = A;
+      toWords = B;
 
-      fromText = norm[0];
-      toText = norm[1];
-
-      /* rebuild DOM SOLO quando cambia struttura */
-      buildDOM(fromText);
+      buildDOM(fromWords);
     }
   }
 
@@ -286,19 +230,13 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
-/* ============================= */
-/* INIT */
-/* ============================= */
-
+/* ================= INIT ================= */
 function init() {
-
   current = getNextIndex();
-
-  buildDOM(texts[current]);
-  fromText = texts[current];
+  fromWords = texts[current].split(" ");
+  buildDOM(fromWords);
 
   waitStart = performance.now();
-
   requestAnimationFrame(loop);
 }
 
