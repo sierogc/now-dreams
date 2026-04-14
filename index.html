@@ -1,101 +1,97 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Continuous Morph System</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="preload" as="image" href="images/image1.webp">
+<style>
+:root {
+  --baseline: 12px;
+}
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-    body {
-      background: white;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
-      color: black;
-    }
+body {
+  background: white;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  color: black;
+}
 
-    .container {
-      display: flex;
-      width: 100vw;
-      min-height: 100vh;
-    }
+/* LAYOUT */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
 
-    /* IMAGE LEFT */
-    .left {
-      width: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 40px;
-    }
+/* COLUMN BASE */
+.col {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: calc(var(--baseline) * 4); /* 48px */
+}
 
-    .left img {
-      width: 100%;
-      max-width: 420px;
-      aspect-ratio: 4 / 5;
-      object-fit: cover;
-    }
+/* IMAGE */
+.image {
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
 
-    /* TEXT RIGHT */
-    .right {
-      width: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 40px;
-    }
+  /* allineamento alla griglia */
+  margin-top: calc(var(--baseline) * 0);
+}
 
-    .text {
-      width: 80%;
-      font-size: 24px;
-      line-height: 1.5;
+/* TEXT */
+.text {
+  width: 100%;
+  max-width: 520px;
 
-      text-align: justify;
-      text-align-last: left;
-    }
+  font-size: 24px;
+  line-height: calc(var(--baseline) * 3); /* 36px */
 
-    .char {
-      display: inline-block;
-      white-space: pre;
-    }
+  text-align: justify;
+  text-align-last: left;
 
-    @media (max-width: 768px) {
-      .container {
-        flex-direction: column;
-      }
+  /* 🔥 blocca rottura parole */
+  word-break: keep-all;
+  overflow-wrap: normal;
+  hyphens: none;
+}
 
-      .left,
-      .right {
-        width: 100%;
-        padding: 20px;
-      }
+/* WORD + CHAR */
+.word {
+  white-space: nowrap;
+}
 
-      .left img {
-        max-width: 90%;
-      }
+.char {
+  display: inline-block;
+}
 
-      .text {
-        width: 90%;
-      }
-    }
-  </style>
+/* MOBILE */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <div class="left">
-    <img src="images/image1.webp" />
+  <div class="col">
+    <img src="images/image1.webp" class="image">
   </div>
 
-  <div class="right">
+  <div class="col">
     <div id="text" class="text"></div>
   </div>
 
@@ -119,16 +115,15 @@ let previous = -1;
 
 let phase = "wait";
 let waitStart = performance.now();
-
 let morphStart = 0;
 
 const WAIT_TIME = 6000;
-const MORPH_TIME = 6000; // 🔥 più lento
+const MORPH_TIME = 7000; // ancora più lento
 
-let fromText = [];
-let toText = [];
+let fromWords = [];
+let toWords = [];
 
-/* ---------------- SAFE PICK ---------------- */
+/* ---------------- RANDOM ---------------- */
 function getNextIndex() {
   let i;
   do {
@@ -137,45 +132,56 @@ function getNextIndex() {
   return i;
 }
 
-/* ---------------- NORMALIZE TEXT ---------------- */
+/* ---------------- BUILD ---------------- */
+function build(words) {
+  const el = document.getElementById("text");
+  el.innerHTML = "";
+
+  words.forEach(word => {
+    const w = document.createElement("span");
+    w.className = "word";
+
+    [...word].forEach(letter => {
+      const c = document.createElement("span");
+      c.className = "char";
+      c.textContent = letter;
+      w.appendChild(c);
+    });
+
+    el.appendChild(w);
+    el.appendChild(document.createTextNode(" "));
+  });
+}
+
+/* ---------------- NORMALIZE ---------------- */
 function normalize(a, b) {
-  const max = Math.max(a.length, b.length);
+  const A = a.split(" ");
+  const B = b.split(" ");
 
-  const A = a.split("");
-  const B = b.split("");
+  const max = Math.max(A.length, B.length);
 
-  while (A.length < max) A.push(" ");
-  while (B.length < max) B.push(" ");
+  while (A.length < max) A.push("");
+  while (B.length < max) B.push("");
 
   return [A, B];
 }
 
-/* ---------------- RENDER ---------------- */
-function render(textArr) {
-  const el = document.getElementById("text");
-  el.innerHTML = "";
-
-  textArr.forEach(ch => {
-    const span = document.createElement("span");
-    span.className = "char";
-    span.textContent = ch;
-    el.appendChild(span);
-  });
-}
-
-/* ---------------- CONTINUOUS MORPH ---------------- */
+/* ---------------- MORPH ---------------- */
 function updateMorph(progress) {
-  const chars = document.querySelectorAll(".char");
+  const words = document.querySelectorAll(".word");
 
-  chars.forEach((el, i) => {
-    const from = fromText[i];
-    const to = toText[i];
+  words.forEach((wordEl, i) => {
+    const from = fromWords[i];
+    const to = toWords[i];
 
-    if (progress >= 1) {
-      el.textContent = to;
-    } else {
-      // progress continuo senza random
-      el.textContent = (progress < (i / chars.length)) ? from : to;
+    const chars = wordEl.querySelectorAll(".char");
+
+    for (let j = 0; j < Math.max(from.length, to.length); j++) {
+      if (!chars[j]) continue;
+
+      if (progress > (j / (to.length || 1))) {
+        chars[j].textContent = to[j] || "";
+      }
     }
   });
 }
@@ -184,29 +190,26 @@ function updateMorph(progress) {
 function loop(now) {
 
   if (phase === "wait") {
-
     if (now - waitStart > WAIT_TIME) {
-
       phase = "morph";
       morphStart = now;
 
       previous = current;
       current = getNextIndex();
 
-      const old = texts[previous === -1 ? current : previous];
-      const next = texts[current];
+      const [A, B] = normalize(
+        texts[previous === -1 ? current : previous],
+        texts[current]
+      );
 
-      const norm = normalize(old, next);
+      fromWords = A;
+      toWords = B;
 
-      fromText = norm[0];
-      toText = norm[1];
-
-      render(fromText);
+      build(fromWords);
     }
   }
 
   if (phase === "morph") {
-
     let progress = (now - morphStart) / MORPH_TIME;
     if (progress > 1) progress = 1;
 
@@ -224,7 +227,7 @@ function loop(now) {
 /* ---------------- INIT ---------------- */
 function init() {
   current = getNextIndex();
-  render(texts[current].split(""));
+  build(texts[current].split(" "));
   waitStart = performance.now();
   requestAnimationFrame(loop);
 }
