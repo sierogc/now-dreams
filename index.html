@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Split Screen Project</title>
+  <title>Generative Morph System</title>
 
-  <!-- preload immagine -->
   <link rel="preload" as="image" href="images/image1.webp">
 
   <style>
@@ -21,14 +20,12 @@
       color: black;
     }
 
-    /* CONTAINER */
     .container {
       display: flex;
       width: 100vw;
       min-height: 100vh;
     }
 
-    /* TOP ALIGN */
     .left,
     .right {
       width: 50%;
@@ -38,7 +35,7 @@
       padding: 40px;
     }
 
-    /* LEFT IMAGE */
+    /* IMAGE */
     .left img {
       width: 100%;
       max-width: 420px;
@@ -47,19 +44,20 @@
       display: block;
     }
 
-    /* RIGHT TEXT */
+    /* TEXT */
     .text {
       width: 80%;
-      text-align: justify; /* ✔ giustificato */
-    }
-
-    p {
-      font-weight: 400;
+      text-align: justify;
       font-size: 24px;
       line-height: 1.5;
+      font-weight: 400;
+      white-space: pre-wrap;
     }
 
-    /* MOBILE */
+    .word {
+      display: inline-block;
+    }
+
     @media (max-width: 768px) {
       .container {
         flex-direction: column;
@@ -79,36 +77,166 @@
         width: 90%;
       }
     }
-
-    /* LARGE SCREENS */
-    @media (min-width: 1600px) {
-      p {
-        font-size: 28px;
-      }
-    }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <!-- LEFT -->
-    <div class="left">
-      <img src="images/image1.webp" alt="immagine progetto" />
-    </div>
-
-    <!-- RIGHT -->
-    <div class="right">
-      <div class="text">
-        <p>
-          Testo del progetto senza titolo, solo corpo. Il layout mantiene una struttura editoriale pulita,
-          con allineamento top tra immagine e testo e una composizione tipografica giustificata.
-        </p>
-      </div>
-    </div>
-
+  <!-- LEFT TEXT -->
+  <div class="left">
+    <div id="text" class="text"></div>
   </div>
+
+  <!-- RIGHT IMAGE -->
+  <div class="right">
+    <img src="images/image1.webp" alt="immagine progetto" />
+  </div>
+
+</div>
+
+<script>
+/* -----------------------------
+   TESTI (EDITABILI)
+------------------------------*/
+const texts = [
+  "La periferia è un linguaggio che si scrive da solo nel tempo.",
+  "Il corpo digitale perde peso quando viene osservato troppo a lungo.",
+  "Ogni immagine è un errore che insiste nel diventare memoria.",
+  "La realtà non si interrompe, cambia solo frequenza di lettura.",
+  "Non esiste un inizio, solo una sequenza che decide di ripetersi.",
+  "Il sistema genera significato solo quando inizia a corrodersi."
+];
+
+let currentIndex = -1;
+let previousIndex = -1;
+
+/* -----------------------------
+   UTILS RANDOM
+------------------------------*/
+function getNextIndex() {
+  let i;
+  do {
+    i = Math.floor(Math.random() * texts.length);
+  } while (i === currentIndex || i === previousIndex);
+  return i;
+}
+
+/* -----------------------------
+   SCRAMBLE CHARACTERS
+------------------------------*/
+const chars = "!<>-_\\/[]{}—=+*^?#";
+
+function randomChar() {
+  return chars[Math.floor(Math.random() * chars.length)];
+}
+
+/* -----------------------------
+   MORPH WORD FUNCTION
+------------------------------*/
+function morphWord(from, to, progress) {
+  const maxLen = Math.max(from.length, to.length);
+  let result = "";
+
+  for (let i = 0; i < maxLen; i++) {
+    const fromChar = from[i] || "";
+    const toChar = to[i] || "";
+
+    if (i < progress) {
+      result += toChar;
+    } else {
+      result += randomChar();
+    }
+  }
+
+  return result;
+}
+
+/* -----------------------------
+   RENDER INITIAL TEXT
+------------------------------*/
+function renderText(text) {
+  const el = document.getElementById("text");
+  el.innerHTML = "";
+
+  const words = text.split(" ");
+
+  words.forEach(w => {
+    const span = document.createElement("span");
+    span.className = "word";
+    span.textContent = w + " ";
+    el.appendChild(span);
+  });
+}
+
+/* -----------------------------
+   MORPH ENGINE (POSITION SAFE)
+------------------------------*/
+function morphTo(newText) {
+  const container = document.getElementById("text");
+
+  const oldWords = Array.from(container.children).map(w =>
+    w.textContent.trim()
+  );
+
+  const newWords = newText.split(" ");
+
+  const maxLen = Math.max(oldWords.length, newWords.length);
+
+  let frame = 0;
+  const steps = 25;
+
+  const interval = setInterval(() => {
+    container.innerHTML = "";
+
+    for (let i = 0; i < maxLen; i++) {
+      const from = oldWords[i] || "";
+      const to = newWords[i] || "";
+
+      const progress = Math.floor((frame / steps) * to.length);
+
+      const span = document.createElement("span");
+      span.className = "word";
+
+      span.textContent = morphWord(from, to, progress) + " ";
+
+      container.appendChild(span);
+    }
+
+    frame++;
+
+    if (frame > steps) {
+      clearInterval(interval);
+      renderText(newText);
+    }
+  }, 60);
+}
+
+/* -----------------------------
+   INIT
+------------------------------*/
+function init() {
+  currentIndex = getNextIndex();
+  renderText(texts[currentIndex]);
+}
+
+/* -----------------------------
+   LOOP
+------------------------------*/
+function changeText() {
+  previousIndex = currentIndex;
+  currentIndex = getNextIndex();
+
+  morphTo(texts[currentIndex]);
+}
+
+/* -----------------------------
+   START SYSTEM
+------------------------------*/
+init();
+setInterval(changeText, 15000);
+</script>
 
 </body>
 </html>
