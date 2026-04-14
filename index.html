@@ -57,6 +57,8 @@
       font-size: 24px;
       line-height: 1.5;
       font-weight: 400;
+
+      /* ✔ FIX JUSTIFIED CORRETTO */
       text-align: justify;
       text-align-last: left;
     }
@@ -119,18 +121,21 @@ const texts = [
 let currentIndex = -1;
 let previousIndex = -1;
 
-/* ---------------- STATE MACHINE ---------------- */
-let phase = "wait"; // wait | morph
+/* ---------------- STATE ---------------- */
+let phase = "wait";
 let waitStart = performance.now();
 
 let morphStart = 0;
+
 const WAIT_TIME = 6000;
-const MORPH_TIME = 2200; // durata transizione
+
+/* ✔ MORPH PIÙ LENTO */
+const MORPH_TIME = 4500;
 
 let oldText = "";
 let newText = "";
 
-/* ---------------- UTILS ---------------- */
+/* ---------------- RANDOM ---------------- */
 function getNextIndex() {
   let i;
   do {
@@ -139,7 +144,7 @@ function getNextIndex() {
   return i;
 }
 
-/* ---------------- INIT TEXT ---------------- */
+/* ---------------- RENDER ---------------- */
 function renderText(text) {
   const el = document.getElementById("text");
   el.innerHTML = "";
@@ -152,7 +157,7 @@ function renderText(text) {
   });
 }
 
-/* ---------------- FRAME MORPH ---------------- */
+/* ---------------- MORPH ---------------- */
 function updateMorph(progress) {
   const chars = document.querySelectorAll(".char");
   const target = [...newText];
@@ -164,14 +169,13 @@ function updateMorph(progress) {
   });
 }
 
-/* ---------------- LOOP FRAME-BASED ---------------- */
+/* ---------------- LOOP ---------------- */
 function loop(now) {
 
   if (phase === "wait") {
 
     if (now - waitStart > WAIT_TIME) {
 
-      // start morph
       phase = "morph";
       morphStart = now;
 
@@ -182,7 +186,6 @@ function loop(now) {
 
       renderText(oldText);
     }
-
   }
 
   if (phase === "morph") {
@@ -201,7 +204,7 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
-/* ---------------- START ---------------- */
+/* ---------------- INIT ---------------- */
 function init() {
   currentIndex = getNextIndex();
   renderText(texts[currentIndex]);
