@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Split Screen Project</title>
 
-  <!-- ⚡ PRELOAD IMMAGINI (performance) -->
+  <!-- preload immagine -->
   <link rel="preload" as="image" href="images/image1.webp">
 
   <style>
@@ -21,39 +21,33 @@
       color: black;
     }
 
-    /* SPLIT LAYOUT */
+    /* CONTAINER */
     .container {
       display: flex;
       width: 100vw;
-      height: 100vh;
+      min-height: 100vh;
     }
 
-    /* LEFT IMAGE SIDE */
-    .left {
-      width: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
-    }
-
-    .left img {
-      width: 100%;
-      max-width: 420px;        /* controllo editoriale */
-      aspect-ratio: 4 / 5;     /* formato fisso coerente */
-      object-fit: cover;       /* ritaglio pulito */
-      display: block;
-    }
-
-    /* RIGHT TEXT SIDE */
+    /* 🔥 FIX: ALLINEAMENTO TOP (NON CENTER) */
+    .left,
     .right {
       width: 50%;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
       padding: 40px;
     }
 
+    /* LEFT IMAGE */
+    .left img {
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* RIGHT TEXT */
     .text {
       width: 80%;
     }
@@ -62,6 +56,7 @@
       font-weight: 400;
       font-size: 28px;
       margin-bottom: 16px;
+      line-height: 1;
     }
 
     p {
@@ -70,7 +65,7 @@
       line-height: 1.5;
     }
 
-    /* 📱 MOBILE */
+    /* MOBILE */
     @media (max-width: 768px) {
       .container {
         flex-direction: column;
@@ -79,7 +74,6 @@
       .left,
       .right {
         width: 100%;
-        height: 50vh;
         padding: 20px;
       }
 
@@ -89,11 +83,10 @@
 
       .text {
         width: 90%;
-        text-align: center;
       }
     }
 
-    /* 🖥️ LARGE SCREENS */
+    /* LARGE SCREENS */
     @media (min-width: 1600px) {
       h1 {
         font-size: 34px;
@@ -110,18 +103,18 @@
 
   <div class="container">
 
-    <!-- LEFT: IMAGE -->
+    <!-- LEFT -->
     <div class="left">
       <img src="images/image1.jpg" alt="immagine progetto" />
     </div>
 
-    <!-- RIGHT: TEXT -->
+    <!-- RIGHT -->
     <div class="right">
       <div class="text">
         <h1>Titolo progetto</h1>
         <p>
-          Testo del progetto. Layout split screen pulito, coerente e responsive.
-          L’immagine mantiene sempre un rapporto 4:5 e si comporta come un elemento editoriale.
+          Testo del progetto. Layout split screen pulito e coerente.
+          L’immagine e il testo ora partono dallo stesso punto verticale (top aligned).
         </p>
       </div>
     </div>
